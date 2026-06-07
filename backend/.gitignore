@@ -5,6 +5,7 @@
 .env.*.example
 *.pem
 *.key
+.env.production
 
 # Logs
 logs
@@ -21,6 +22,7 @@ dist
 dist-ssr
 *.local
 .vite
+build
 
 # Editor directories and files
 .vscode/*
@@ -64,3 +66,28 @@ out
 .vscode/
 .idea/
 *.iml
+
+# Uploads and temporary data
+uploads/*
+!uploads/.gitkeep
+temp/
+tmp/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# API keys and tokens (if accidentally committed)
+.credentials
+credentials.json
+
+# Node process manager
+.pm2
+
+# Nodemon
+nodemon.json.local
+
+# Testing
+.nyc_output
+coverage
