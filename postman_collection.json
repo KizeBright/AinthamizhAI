@@ -1,0 +1,340 @@
+{
+  "info": {
+    "name": "Ainthamizh AI Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": [""]
+        }
+      }
+    },
+    {
+      "name": "Health Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Auth Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\",\n  \"displayName\": \"User Name\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/register",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "Auth Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/login",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Auth Profile",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"displayName\": \"User Name\",\n  \"photoURL\": \"https://example.com/avatar.png\",\n  \"preferredLevel\": \"beginner\",\n  \"nativeLanguage\": \"Tamil\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/profile",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "profile"]
+        }
+      }
+    },
+    {
+      "name": "Auth Me",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/auth/me",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "me"]
+        }
+      }
+    },
+    {
+      "name": "Auth Verify",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/auth/verify",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "verify"]
+        }
+      }
+    },
+    {
+      "name": "Translator",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"naan tamil pesuven\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/translator",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "translator"]
+        }
+      }
+    },
+    {
+      "name": "NER",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"நான் தமிழ் மொழி பயிற்சி செய்கிறேன்\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/ner",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "ner"]
+        }
+      }
+    },
+    {
+      "name": "Sentence Generator",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"noun\": \"மாணவன்\",\n  \"verb\": \"படி\",\n  \"tense\": \"present\",\n  \"gender\": \"male\",\n  \"mode\": \"sentence\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/generator",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "generator"]
+        }
+      }
+    },
+    {
+      "name": "Pronunciation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "X-Target-Text",
+            "value": "நான் தமிழ் பேசுகிறேன்"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": ["/path/to/audio.webm"]
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/pronunciation?targetText=நான் தமிழ் பேசுகிறேன்",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "pronunciation"],
+          "query": [
+            {
+              "key": "targetText",
+              "value": "நான் தமிழ் பேசுகிறேன்"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "OCR",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": ["/path/to/image.png"]
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/ocr",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "ocr"]
+        }
+      }
+    },
+    {
+      "name": "Analytics Stats",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/analytics/stats/{{userId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "analytics", "stats", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Analytics Activity",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/analytics/activity/{{userId}}?limit=12",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "analytics", "activity", "{{userId}}"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "12"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
