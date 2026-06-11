@@ -68,20 +68,65 @@ router.post("/register", async (req, res, next) => {
     const { data, error } = await supabase.auth.admin.createUser({
       email,
       password,
+      email_confirm: true,
       user_metadata: {
         displayName,
       },
     });
 
     if (error) {
+      console.error("Supabase registration error:", error.message);
+
+      // Handle auth provider disabled
+      if (error.message && error.message.includes("disabled")) {
+        return res.status(503).json({
+          error: "Auth Provider Unavailable",
+          message: "Email authentication is currently disabled. Please check Supabase settings.",
+          details: error.message,
+        });
+      }
+
+      // Handle duplicate email
+      if (error.message && error.message.includes("duplicate")) {
+        return res.status(400).json({
+          error: "Registration Failed",
+          message: "Email already registered. Please login instead.",
+        });
+      }
+
+      // Handle weak password
+      if (error.message && error.message.includes("password")) {
+        return res.status(400).json({
+          error: "Registration Failed",
+          message: "Password does not meet requirements (min 6 chars recommended).",
+        });
+      }
+
       return res.status(error.status || 400).json({
         error: "Registration Failed",
         message: error.message || "Unable to register user.",
-        details: error,
       });
     }
 
     const user = data.user || null;
+    let session = data.session;
+
+    if (!session) {
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (loginError) {
+        return res.status(loginError.status || 400).json({
+          error: "Registration Login Failed",
+          message: loginError.message || "Unable to sign in after registration.",
+          details: loginError,
+        });
+      }
+
+      session = loginData.session;
+    }
 
     if (user && user.id) {
       await supabase.from("users").upsert(
@@ -97,19 +142,12 @@ router.post("/register", async (req, res, next) => {
       );
     }
 
-    const responsePayload = {
+    return res.status(201).json({
       message: "Registration successful.",
       user: user || null,
-    };
-
-    if (data.session) {
-      responsePayload.session = data.session;
-    } else {
-      responsePayload.notice =
-        "Registration completed. A confirmation email may be required before sign-in.";
-    }
-
-    return res.status(201).json(responsePayload);
+      session,
+      access_token: session?.access_token || null,
+    });
   } catch (error) {
     return next(error);
   }
@@ -132,9 +170,44 @@ router.post("/login", async (req, res, next) => {
     });
 
     if (error) {
+      console.error("Supabase auth error:", error.message);
+
+      // Handle specific Supabase auth configuration issues
+      if (error.message && error.message.includes("disabled")) {
+        return res.status(503).json({
+          error: "Auth Provider Unavailable",
+          message: "Email authentication is currently disabled. Please check Supabase settings.",
+          details: error.message,
+        });
+      }
+
+      // Handle invalid credentials
+      if (error.message && (error.message.includes("Invalid") || error.message.includes("incorrect"))) {
+        return res.status(401).json({
+          error: "Login Failed",
+          message: "Invalid email or password.",
+        });
+      }
+
+      // Handle user not found
+      if (error.message && error.message.includes("not found")) {
+        return res.status(401).json({
+          error: "Login Failed",
+          message: "User not found. Please register first.",
+        });
+      }
+
+      // Generic error
+      return res.status(error.status || 401).json({
+        error: "Login Failed",
+        message: error.message || "Unable to sign in.",
+      });
+    }
+
+    if (!data.session) {
       return res.status(401).json({
         error: "Login Failed",
-        message: error.message,
+        message: "No session returned. Please try again.",
       });
     }
 
@@ -145,7 +218,8 @@ router.post("/login", async (req, res, next) => {
       access_token: data.session?.access_token,
     });
   } catch (error) {
-    next(error);
+    console.error("Login endpoint error:", error);
+    return next(error);
   }
 });
 
