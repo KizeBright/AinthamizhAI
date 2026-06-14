@@ -1,11 +1,1 @@
-﻿const express = require("express");
-
-const router = express.Router();
-
-router.get("/", (req, res) => {
-  res.status(200).json({
-    message: "Sentence routes are not implemented. Use /api/generator for sentence generation.",
-  });
-});
-
-module.exports = router;
+module.exports = require("./generator");
