@@ -211,6 +211,22 @@ router.post("/login", async (req, res, next) => {
       });
     }
 
+    // Ensure user record exists in users table
+    if (data.user && data.user.id) {
+      await supabase.from("users").upsert(
+        {
+          id: data.user.id,
+          email: data.user.email,
+          display_name: data.user.user_metadata?.displayName || data.user.user_metadata?.full_name || null,
+          photo_url: data.user.user_metadata?.picture || null,
+          analytics: defaultAnalytics,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: ["id"] },
+      );
+    }
+
     return res.status(200).json({
       message: "Login successful",
       user: data.user,
@@ -265,25 +281,49 @@ router.post("/profile", authMiddleware, async (req, res, next) => {
   }
 });
 
-router.get("/me", authMiddleware, async (req, res, next) => {
+router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const { data: user, error } = await supabase
+    const { data, error } = await supabase
       .from("users")
       .select("*")
       .eq("id", req.user.uid)
       .single();
 
-    if (error || !user) {
+    if (error) {
       return res.status(404).json({
         error: "Not Found",
-        message: "No user profile exists for this authenticated user.",
+        message: "User profile not found.",
       });
     }
 
-    return res.status(200).json({ user });
-  } catch (error) {
-    return next(error);
+    return res.json({
+      user: data,
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      error: err.message,
+    });
   }
+});
+
+router.get("/debug-users", authMiddleware, async (req, res) => {
+  if (req.user.claims?.admin !== true) {
+    return res.status(403).json({
+      error: "Forbidden",
+      message: "Admin access is required.",
+    });
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("*");
+
+  res.json({
+    data,
+    error
+  });
 });
 
 router.get("/verify", authMiddleware, (req, res) => {

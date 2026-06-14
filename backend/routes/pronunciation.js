@@ -220,12 +220,26 @@ router.post("/", authMiddleware, conditionalBody, async (req, res, next) => {
       audio = getBase64Payload(req);
     }
 
-    if (!audio.mimeType.startsWith("audio/")) {
-      const error = new Error("Audio mimeType must start with audio/.");
-      error.statusCode = 400;
-      error.name = "BadRequest";
-      throw error;
-    }
+  console.log("====================================");
+  console.log("FILE INFO:", req.file);
+  console.log("MIME TYPE:", audio.mimeType);
+  console.log("====================================");
+
+  if (
+  !audio.mimeType.startsWith("audio/") &&
+  audio.mimeType !== "video/webm"
+) {
+  const error = new Error(
+    "Audio mimeType must be audio/* or video/webm."
+  );
+  error.statusCode = 400;
+  error.name = "BadRequest";
+  throw error;
+}
+
+if (audio.mimeType === "video/webm") {
+  audio.mimeType = "audio/webm";
+}
 
     const result = await generateJson({
       systemInstruction: PRONUNCIATION_SYSTEM_PROMPT,
