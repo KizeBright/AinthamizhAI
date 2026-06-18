@@ -1,22 +1,60 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  Button,
+  Card,
+  ExamplePanel,
+  HistoryPanel,
+  Icon,
+  LoginRequired,
+  Skeleton,
+  ToolWorkspace,
+} from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import API from "../services/api";
+import { clearHistory, loadHistory, saveHistoryItem } from "../utils/history";
+import { notify } from "../utils/notifications";
+
+const HISTORY_KEY = "ainthamizh:translator-history";
+
+const examples = [
+  {
+    id: "daily",
+    title: "Daily practice",
+    description: "naan tamil pesuven",
+    text: "naan tamil pesuven",
+  },
+  {
+    id: "greeting",
+    title: "Greeting",
+    description: "vanakkam nanbare",
+    text: "vanakkam nanbare",
+  },
+  {
+    id: "learning",
+    title: "Learning sentence",
+    description: "naan indru puthiya vaarthai kathukonden",
+    text: "naan indru puthiya vaarthai kathukonden",
+  },
+];
 
 function TanglishTranslator() {
   const { currentUser } = useAuth();
   const [text, setText] = useState("naan tamil pesuven");
   const [result, setResult] = useState(null);
+  const [history, setHistory] = useState(() => loadHistory(HISTORY_KEY));
   const [autoTranslate, setAutoTranslate] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [sourceLanguage, setSourceLanguage] = useState("Tanglish");
+  const [targetLanguage, setTargetLanguage] = useState("Tamil");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const debounceRef = useRef(null);
 
-  const translateText = async () => {
+  const translateText = useCallback(async () => {
     if (!text.trim()) {
-      setError("Enter Tanglish text to translate.");
+      const message = "Enter Tanglish text to translate.";
+      setError(message);
+      notify.error(message);
       return;
     }
 
@@ -25,13 +63,24 @@ function TanglishTranslator() {
 
     try {
       const response = await API.post("/translator", { text });
-      setResult(response.data.data);
+      const data = response.data.data;
+      setResult(data);
+      setHistory(
+        saveHistoryItem(HISTORY_KEY, {
+          input: text,
+          output: data?.tamilText || "",
+          title: text,
+        }),
+      );
+      notify.success("Translation saved to local history.");
     } catch (err) {
-      setError(err?.response?.data?.message || "Translation failed.");
+      const message = err?.response?.data?.message || "Translation failed.";
+      setError(message);
+      notify.error(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [text]);
 
   useEffect(() => {
     if (!autoTranslate || !text.trim() || !currentUser) {
@@ -44,7 +93,7 @@ function TanglishTranslator() {
     }, 700);
 
     return () => clearTimeout(debounceRef.current);
-  }, [autoTranslate, text, currentUser]);
+  }, [autoTranslate, text, currentUser, translateText]);
 
   const copyOutput = async () => {
     const tamilText = result?.tamilText || "";
@@ -54,121 +103,182 @@ function TanglishTranslator() {
     }
 
     await navigator.clipboard.writeText(tamilText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
+    notify.success("Translation copied.");
+  };
+
+  const clearText = () => {
+    setText("");
+    setResult(null);
+    setError("");
+  };
+
+  const swapLanguages = () => {
+    setSourceLanguage(targetLanguage);
+    setTargetLanguage(sourceLanguage);
   };
 
   if (!currentUser) {
-    return (
-      <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <h1 className="text-3xl font-black text-slate-950">
-          Login required
-        </h1>
-        <p className="mt-3 text-slate-600">
-          The translator saves usage analytics to your dashboard.
-        </p>
-        <Link
-          to="/login"
-          className="mt-6 inline-flex rounded-md bg-emerald-700 px-5 py-3 font-bold text-white"
-        >
-          Login
-        </Link>
-      </section>
-    );
+    return <LoginRequired message="The translator saves usage analytics to your dashboard." />;
   }
 
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
-            Tanglish Translator
-          </p>
-          <h1 className="mt-2 text-3xl font-black text-slate-950 sm:text-4xl">
-            Convert roman Tamil into pure Tamil script.
-          </h1>
+  const inputSection = (
+    <div className="space-y-5">
+      <Card>
+        <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-end">
+          <label>
+            <span className="field-label">Source language</span>
+            <select
+              value={sourceLanguage}
+              onChange={(event) => setSourceLanguage(event.target.value)}
+              className="field-control"
+            >
+              <option>Tanglish</option>
+              <option>Tamil</option>
+            </select>
+          </label>
+          <Button type="button" variant="secondary" onClick={swapLanguages}>
+            <Icon name="swap" className="h-4 w-4" />
+            Swap
+          </Button>
+          <label>
+            <span className="field-label">Target language</span>
+            <select
+              value={targetLanguage}
+              onChange={(event) => setTargetLanguage(event.target.value)}
+              className="field-control"
+            >
+              <option>Tamil</option>
+              <option>Tanglish</option>
+            </select>
+          </label>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="card-title">Input</h2>
+          <span className="text-xs font-semibold text-gray-400">{text.length}/2000</span>
+        </div>
+        <textarea
+          className="field-control min-h-80 resize-none bg-gray-50 text-lg leading-8 focus:bg-white"
+          value={text}
+          maxLength={2000}
+          onChange={(event) => setText(event.target.value)}
+          placeholder="naan tamil pesuven"
+        />
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Button type="button" disabled={loading} onClick={translateText}>
+            {loading ? "Translating..." : "Translate"}
+            <Icon name="arrow" className="h-4 w-4" />
+          </Button>
+          <Button type="button" variant="secondary" onClick={clearText}>
+            <Icon name="clear" className="h-4 w-4" />
+            Clear
+          </Button>
+        </div>
+      </Card>
+
+      <ExamplePanel
+        examples={examples}
+        onSelect={(example) => {
+          setText(example.text);
+          notify.info("Example loaded.");
+        }}
+      />
+    </div>
+  );
+
+  const resultSection = (
+    <div className="space-y-5">
+      <Card>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="card-title">Translation Result</h2>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={copyOutput}
+            disabled={!result?.tamilText}
+            className="px-3 py-2"
+          >
+            <Icon name="copy" className="h-4 w-4" />
+            Copy
+          </Button>
         </div>
 
-        <label className="flex items-center gap-3 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+        {loading ? (
+          <Skeleton className="min-h-80 w-full" />
+        ) : (
+          <div className="min-h-80 rounded-2xl border border-gray-100 bg-indigo-50/60 p-5 text-3xl font-bold leading-[1.8] text-gray-950">
+            {result?.tamilText || (
+              <span className="text-base font-medium text-gray-400">
+                Your Tamil text will appear here.
+              </span>
+            )}
+          </div>
+        )}
+
+        {result?.tokens?.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {result.tokens.slice(0, 12).map((token, index) => (
+              <span
+                key={`${token.source}-${index}`}
+                className="badge border-indigo-100 bg-white text-indigo-700"
+              >
+                {token.source} {"->"} {token.tamil}
+              </span>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <HistoryPanel
+        items={history}
+        onClear={() => {
+          setHistory(clearHistory(HISTORY_KEY));
+          notify.success("Translator history cleared.");
+        }}
+        onReuse={(item) => {
+          setText(item.input || "");
+          setResult(item.output ? { tamilText: item.output } : null);
+          notify.info("History entry loaded.");
+        }}
+        renderItem={(item) => (
+          <>
+            <span className="block truncate text-sm font-semibold text-gray-900">
+              {item.input}
+            </span>
+            <span className="mt-1 block truncate text-sm text-gray-500">{item.output}</span>
+            <span className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+              <Icon name="clock" className="h-3 w-3" />
+              {new Date(item.timestamp).toLocaleString()}
+            </span>
+          </>
+        )}
+      />
+    </div>
+  );
+
+  return (
+    <ToolWorkspace
+      eyebrow="Translator"
+      title="Convert roman Tamil into clean Tamil script."
+      description="A focused translation desk with readable input, clear output, examples, and local history."
+      action={
+        <label className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm">
           <input
             type="checkbox"
-            className="h-4 w-4 accent-emerald-700"
+            className="h-4 w-4 accent-indigo-600"
             checked={autoTranslate}
             onChange={(event) => setAutoTranslate(event.target.checked)}
           />
           Auto translate
         </label>
-      </div>
-
-      {error && (
-        <div className="mb-5 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700">
-          {error}
-        </div>
-      )}
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-black uppercase tracking-wider text-slate-500">
-              Input
-            </h2>
-            <span className="text-xs text-slate-400">{text.length}/2000</span>
-          </div>
-          <textarea
-            className="min-h-80 w-full resize-none rounded-md border border-slate-300 bg-slate-50 p-4 text-lg leading-8 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-            value={text}
-            maxLength={2000}
-            onChange={(event) => setText(event.target.value)}
-            placeholder="naan tamil pesuven"
-          />
-          <button
-            type="button"
-            disabled={loading}
-            onClick={translateText}
-            className="mt-4 rounded-md bg-slate-950 px-5 py-3 font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Translating..." : "Translate"}
-          </button>
-        </div>
-
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-black uppercase tracking-wider text-slate-500">
-              Tamil Output
-            </h2>
-            <button
-              type="button"
-              onClick={copyOutput}
-              disabled={!result?.tamilText}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {copied ? "Copied" : "Copy"}
-            </button>
-          </div>
-
-          <div className="min-h-80 rounded-md bg-slate-950 p-5 text-3xl font-bold leading-[1.8] text-white">
-            {result?.tamilText || (
-              <span className="text-base font-medium text-slate-400">
-                Your Tamil text will appear here.
-              </span>
-            )}
-          </div>
-
-          {result?.tokens?.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {result.tokens.slice(0, 12).map((token, index) => (
-                <span
-                  key={`${token.source}-${index}`}
-                  className="rounded-md bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800"
-                >
-                  {token.source} {"->"} {token.tamil}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
+      }
+      error={error}
+      onRetry={text.trim() ? translateText : undefined}
+      input={inputSection}
+      result={resultSection}
+    />
   );
 }
 
