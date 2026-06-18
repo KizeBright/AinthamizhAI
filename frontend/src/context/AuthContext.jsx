@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import API, { setAuthTokenProvider } from "../services/api";
@@ -42,8 +43,8 @@ export function AuthProvider({ children }) {
         } catch (error) {
           setAuthError(
             error?.response?.data?.message ||
-              error.message ||
-              "Unable to sync your profile.",
+            error.message ||
+            "Unable to sync your profile.",
           );
         }
       }
@@ -73,8 +74,8 @@ export function AuthProvider({ children }) {
         } catch (error) {
           setAuthError(
             error?.response?.data?.message ||
-              error.message ||
-              "Unable to sync your profile.",
+            error.message ||
+            "Unable to sync your profile.",
           );
         } finally {
           setLoading(false);
@@ -88,7 +89,7 @@ export function AuthProvider({ children }) {
     };
   }, [refreshToken]);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     setAuthError("");
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -101,9 +102,9 @@ export function AuthProvider({ children }) {
 
     await refreshToken();
     return data.user;
-  };
+  }, [refreshToken]);
 
-  const register = async ({ email, password, displayName }) => {
+  const register = useCallback(async ({ email, password, displayName }) => {
     setAuthError("");
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -122,16 +123,16 @@ export function AuthProvider({ children }) {
     await refreshToken();
     await API.post("/auth/profile", { displayName });
     return data.user;
-  };
+  }, [refreshToken]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setAuthError("");
     await supabase.auth.signOut();
     setCurrentUser(null);
     setIdToken(null);
-  };
+  }, []);
 
-  const forgotPassword = async (email) => {
+  const forgotPassword = useCallback(async (email) => {
     setAuthError("");
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/login?mode=recovery`,
@@ -140,7 +141,7 @@ export function AuthProvider({ children }) {
     if (error) {
       throw error;
     }
-  };
+  }, []);
 
   const updatePassword = async (password) => {
     setAuthError("");
@@ -168,7 +169,17 @@ export function AuthProvider({ children }) {
       register,
       updatePassword,
     }),
-    [authError, currentUser, idToken, loading, refreshToken],
+    [
+      authError,
+      currentUser,
+      forgotPassword,
+      idToken,
+      loading,
+      login,
+      logout,
+      refreshToken,
+      register,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

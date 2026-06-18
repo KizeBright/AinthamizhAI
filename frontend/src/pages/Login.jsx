@@ -1,14 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+import {
+  Button,
+  Card,
+  ErrorAlert,
+  Icon,
+  SegmentedControl,
+  SuccessAlert,
+} from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../services/supabase";
+import { notify } from "../utils/notifications";
 
 function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { forgotPassword, login, register, updatePassword } = useAuth();
   const [mode, setMode] = useState("login");
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     displayName: "",
     email: "",
@@ -18,6 +28,32 @@ function Login() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const validation = useMemo(
+    () => ({
+      displayName:
+        mode === "register" && form.displayName.trim().length < 2
+          ? "Enter at least 2 characters."
+          : "",
+      email:
+        mode !== "recovery" &&
+        form.email &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
+          ? "Enter a valid email address."
+          : "",
+      password:
+        mode !== "reset" && form.password && form.password.length < 6
+          ? "Password must be at least 6 characters."
+          : "",
+      confirmPassword:
+        mode === "recovery" &&
+        form.confirmPassword &&
+        form.password !== form.confirmPassword
+          ? "Passwords do not match."
+          : "",
+    }),
+    [form, mode],
+  );
 
   const updateField = (key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -46,7 +82,10 @@ function Login() {
     try {
       if (mode === "reset") {
         await forgotPassword(form.email);
-        setStatus("Password reset email sent. Open the link to set a new password.");
+        const message =
+          "Password reset email sent. Open the link to set a new password.";
+        setStatus(message);
+        notify.success(message);
         return;
       }
 
@@ -61,7 +100,9 @@ function Login() {
 
         await updatePassword(form.password);
         await supabase.auth.signOut();
-        setStatus("Password updated. Please login with your new password.");
+        const message = "Password updated. Please login with your new password.";
+        setStatus(message);
+        notify.success(message);
         setMode("login");
         setForm((current) => ({
           ...current,
@@ -74,157 +115,186 @@ function Login() {
 
       if (mode === "register") {
         await register(form);
+        notify.success("Account created successfully.");
       } else {
         await login(form.email, form.password);
+        notify.success("Signed in successfully.");
       }
 
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message || "Authentication failed.");
+      const message = err.message || "Authentication failed.";
+      setError(message);
+      notify.error(message);
     } finally {
       setLoading(false);
     }
   };
 
+  const submitLabel =
+    loading
+      ? "Working..."
+      : mode === "reset"
+        ? "Send reset link"
+        : mode === "recovery"
+          ? "Update password"
+          : "Continue";
+
   return (
-    <section className="mx-auto flex min-h-[calc(100vh-84px)] max-w-7xl items-center px-4 py-10 sm:px-6">
-      <div className="grid w-full gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
-        <div>
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
+    <section className="page-shell fade-in flex min-h-[calc(100vh-98px)] items-center">
+      <div className="grid w-full gap-8 lg:grid-cols-[1fr_460px] lg:items-center">
+        <div className="max-w-2xl">
+          <span className="badge border-indigo-100 bg-indigo-50 text-indigo-700">
+            <Icon name="home" className="h-4 w-4" />
             Ainthamizh AI
-          </p>
-          <h1 className="max-w-2xl text-4xl font-black leading-tight text-slate-950 sm:text-5xl">
-            Practice Tamil with a focused AI learning desk.
+          </span>
+          <h1 className="mt-6 text-5xl font-bold leading-tight text-gray-950">
+            Your Tamil practice, saved and organized.
           </h1>
-          <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
-            Sign in to save translations, track pronunciation attempts, and keep
-            your recent language practice in one dashboard.
+          <p className="mt-5 text-lg leading-8 text-gray-500">
+            Sign in to track translations, pronunciation attempts, OCR scans,
+            generated sentences, and learning progress from one dashboard.
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
-        >
-          <div className="mb-6 flex rounded-md bg-slate-100 p-1">
-            {["login", "register", "reset"].map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setMode(item)}
-                className={`flex-1 rounded px-3 py-2 text-sm font-semibold capitalize transition ${
-                  mode === item
-                    ? "bg-white text-slate-950 shadow-sm"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
-          {mode === "recovery" && (
-            <div className="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <Card className="p-6 sm:p-7">
+          {mode !== "recovery" ? (
+            <SegmentedControl
+              className="mb-6"
+              options={["login", "register", "reset"]}
+              value={mode}
+              onChange={(item) => {
+                setMode(item);
+                setError("");
+                setStatus("");
+              }}
+            />
+          ) : (
+            <div className="mb-6 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
               Password reset verified. Set your new password below.
             </div>
           )}
 
-          {mode === "register" && (
-            <label className="mb-4 block">
-              <span className="mb-2 block text-sm font-semibold text-slate-700">
-                Name
-              </span>
-              <input
-                className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                value={form.displayName}
-                onChange={(event) =>
-                  updateField("displayName", event.target.value)
-                }
-                placeholder="Your name"
-              />
-            </label>
-          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === "register" && (
+              <div>
+                <label className="field-label" htmlFor="displayName">
+                  Name
+                </label>
+                <input
+                  id="displayName"
+                  className="field-control"
+                  value={form.displayName}
+                  onChange={(event) =>
+                    updateField("displayName", event.target.value)
+                  }
+                  placeholder="Your name"
+                />
+                {validation.displayName && (
+                  <p className="mt-2 text-sm text-red-500">
+                    {validation.displayName}
+                  </p>
+                )}
+              </div>
+            )}
 
-          {mode !== "recovery" && (
-            <label className="mb-4 block">
-              <span className="mb-2 block text-sm font-semibold text-slate-700">
-                Email
-              </span>
-              <input
-                required
-                type="email"
-                className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                value={form.email}
-                onChange={(event) => updateField("email", event.target.value)}
-                placeholder="you@example.com"
-              />
-            </label>
-          )}
+            {mode !== "recovery" && (
+              <div>
+                <label className="field-label" htmlFor="email">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  required
+                  type="email"
+                  className="field-control"
+                  value={form.email}
+                  onChange={(event) => updateField("email", event.target.value)}
+                  placeholder="you@example.com"
+                />
+                {validation.email && (
+                  <p className="mt-2 text-sm text-red-500">
+                    {validation.email}
+                  </p>
+                )}
+              </div>
+            )}
 
-          {mode !== "reset" && (
-            <label className="mb-5 block">
-              <span className="mb-2 block text-sm font-semibold text-slate-700">
-                {mode === "recovery" ? "New Password" : "Password"}
-              </span>
-              <input
-                required
-                type="password"
-                minLength={6}
-                className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                value={form.password}
-                onChange={(event) =>
-                  updateField("password", event.target.value)
-                }
-                placeholder="At least 6 characters"
-              />
-            </label>
-          )}
+            {mode !== "reset" && (
+              <div>
+                <label className="field-label" htmlFor="password">
+                  {mode === "recovery" ? "New Password" : "Password"}
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    required
+                    type={showPassword ? "text" : "password"}
+                    minLength={6}
+                    className="field-control pr-12"
+                    value={form.password}
+                    onChange={(event) =>
+                      updateField("password", event.target.value)
+                    }
+                    placeholder="At least 6 characters"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword((value) => !value)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                  >
+                    <Icon
+                      name={showPassword ? "eyeOff" : "eye"}
+                      className="h-4 w-4"
+                    />
+                  </button>
+                </div>
+                {validation.password && (
+                  <p className="mt-2 text-sm text-red-500">
+                    {validation.password}
+                  </p>
+                )}
+              </div>
+            )}
 
-          {mode === "recovery" && (
-            <label className="mb-5 block">
-              <span className="mb-2 block text-sm font-semibold text-slate-700">
-                Confirm New Password
-              </span>
-              <input
-                required
-                type="password"
-                minLength={6}
-                className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                value={form.confirmPassword}
-                onChange={(event) =>
-                  updateField("confirmPassword", event.target.value)
-                }
-                placeholder="Re-enter new password"
-              />
-            </label>
-          )}
+            {mode === "recovery" && (
+              <div>
+                <label className="field-label" htmlFor="confirmPassword">
+                  Confirm New Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  required
+                  type={showPassword ? "text" : "password"}
+                  minLength={6}
+                  className="field-control"
+                  value={form.confirmPassword}
+                  onChange={(event) =>
+                    updateField("confirmPassword", event.target.value)
+                  }
+                  placeholder="Re-enter new password"
+                />
+                {validation.confirmPassword && (
+                  <p className="mt-2 text-sm text-red-500">
+                    {validation.confirmPassword}
+                  </p>
+                )}
+              </div>
+            )}
 
-          {error && (
-            <div className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {error}
-            </div>
-          )}
+            {error && <ErrorAlert title="Form error" description={error} />}
 
-          {status && (
-            <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-              {status}
-            </div>
-          )}
+            {status && (
+              <SuccessAlert title="Form success" description={status} />
+            )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-slate-950 px-5 py-3 font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading
-              ? "Working..."
-              : mode === "reset"
-                ? "Send reset"
-                : mode === "recovery"
-                  ? "Update password"
-                  : "Continue"}
-          </button>
-        </form>
+            <Button type="submit" disabled={loading} className="w-full">
+              {submitLabel}
+              <Icon name="arrow" className="h-4 w-4" />
+            </Button>
+          </form>
+        </Card>
       </div>
     </section>
   );

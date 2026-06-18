@@ -1,8 +1,39 @@
-import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useRef, useState } from "react";
 
+import {
+  Button,
+  Card,
+  EmptyState,
+  ExamplePanel,
+  Icon,
+  LoginRequired,
+  Skeleton,
+  ToolWorkspace,
+} from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import API from "../services/api";
+import { notify } from "../utils/notifications";
+
+const examples = [
+  {
+    id: "basic",
+    title: "Basic sentence",
+    description: "நான் தமிழ் பேசுவேன்",
+    text: "நான் தமிழ் பேசுவேன்",
+  },
+  {
+    id: "greeting",
+    title: "Greeting",
+    description: "வணக்கம் நண்பரே",
+    text: "வணக்கம் நண்பரே",
+  },
+  {
+    id: "learning",
+    title: "Learning phrase",
+    description: "நான் புதிய சொற்களை கற்கிறேன்",
+    text: "நான் புதிய சொற்களை கற்கிறேன்",
+  },
+];
 
 function PronunciationValidator() {
   const { currentUser } = useAuth();
@@ -34,13 +65,17 @@ function PronunciationValidator() {
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         setAudioBlob(blob);
         stream.getTracks().forEach((track) => track.stop());
+        notify.success("Recording saved locally.");
       };
 
       mediaRecorderRef.current = recorder;
       recorder.start();
       setRecording(true);
+      notify.info("Recording started.");
     } catch (err) {
-      setError(err.message || "Microphone permission was denied.");
+      const message = err.message || "Microphone permission was denied.";
+      setError(message);
+      notify.error(message);
     }
   };
 
@@ -53,12 +88,16 @@ function PronunciationValidator() {
 
   const submitAudio = async () => {
     if (!audioBlob) {
-      setError("Record audio before submitting.");
+      const message = "Record audio before submitting.";
+      setError(message);
+      notify.error(message);
       return;
     }
 
     if (!targetText.trim()) {
-      setError("Target Tamil text is required.");
+      const message = "Target Tamil text is required.";
+      setError(message);
+      notify.error(message);
       return;
     }
 
@@ -75,161 +114,176 @@ function PronunciationValidator() {
       });
 
       setResult(response.data.data);
+      notify.success("Pronunciation feedback complete.");
     } catch (err) {
-      setError(err?.response?.data?.message || "Pronunciation validation failed.");
+      const message = err?.response?.data?.message || "Pronunciation validation failed.";
+      setError(message);
+      notify.error(message);
     } finally {
       setLoading(false);
     }
   };
 
   const accuracy = result?.accuracy || 0;
-  const gaugeStyle = {
-    background: `conic-gradient(#047857 ${accuracy * 3.6}deg, #e2e8f0 0deg)`,
-  };
+  const gaugeStyle = useMemo(
+    () => ({
+      background: `conic-gradient(#4F46E5 ${accuracy * 3.6}deg, #EEF2FF 0deg)`,
+    }),
+    [accuracy],
+  );
 
   if (!currentUser) {
-    return (
-      <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <h1 className="text-3xl font-black text-slate-950">
-          Login required
-        </h1>
-        <Link
-          to="/login"
-          className="mt-6 inline-flex rounded-md bg-emerald-700 px-5 py-3 font-bold text-white"
-        >
-          Login
-        </Link>
-      </section>
-    );
+    return <LoginRequired message="Pronunciation attempts are saved to your dashboard." />;
   }
 
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <div className="mb-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
-          Pronunciation Validator
-        </p>
-        <h1 className="mt-2 text-3xl font-black text-slate-950 sm:text-4xl">
-          Record Tamil speech and get targeted feedback.
-        </h1>
-      </div>
+  const inputSection = (
+    <div className="space-y-5">
+      <Card>
+        <h2 className="section-title">Recording Card</h2>
+        <label className="mt-5 block">
+          <span className="field-label">Target Tamil text</span>
+          <textarea
+            className="field-control min-h-32 resize-none bg-gray-50 text-xl font-semibold leading-9 focus:bg-white"
+            value={targetText}
+            onChange={(event) => setTargetText(event.target.value)}
+          />
+        </label>
 
-      {error && (
-        <div className="mb-5 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700">
-          {error}
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Button
+            type="button"
+            variant={recording ? "secondary" : "primary"}
+            onClick={recording ? stopRecording : startRecording}
+          >
+            <Icon name={recording ? "stop" : "mic"} className="h-4 w-4" />
+            {recording ? "Stop recording" : "Start recording"}
+          </Button>
+          <Button
+            type="button"
+            disabled={!audioBlob || loading}
+            onClick={submitAudio}
+            variant="secondary"
+          >
+            {loading ? "Validating..." : "Submit audio"}
+          </Button>
         </div>
-      )}
 
-      <div className="grid gap-5 lg:grid-cols-[440px_1fr]">
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <label className="mb-5 block">
-            <span className="mb-2 block text-sm font-bold text-slate-700">
-              Target Tamil text
-            </span>
-            <textarea
-              className="min-h-32 w-full resize-none rounded-md border border-slate-300 bg-slate-50 p-4 text-xl font-bold leading-9 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-              value={targetText}
-              onChange={(event) => setTargetText(event.target.value)}
-            />
-          </label>
-
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={recording ? stopRecording : startRecording}
-              className={`rounded-md px-5 py-3 font-bold text-white transition ${
-                recording
-                  ? "bg-rose-700 hover:bg-rose-800"
-                  : "bg-emerald-700 hover:bg-emerald-800"
-              }`}
-            >
-              {recording ? "Stop recording" : "Start recording"}
-            </button>
-            <button
-              type="button"
-              disabled={!audioBlob || loading}
-              onClick={submitAudio}
-              className="rounded-md bg-slate-950 px-5 py-3 font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? "Validating..." : "Submit audio"}
-            </button>
+        <div className="mt-6">
+          <div className="mb-2 flex justify-between text-sm font-semibold text-gray-700">
+            <span>Recording readiness</span>
+            <span>{audioBlob ? "Ready" : recording ? "Recording" : "Waiting"}</span>
           </div>
-
-          {recording && (
-            <div className="mt-5 flex items-center gap-3 rounded-md bg-rose-50 p-4 text-rose-700">
-              <span className="h-3 w-3 animate-pulse rounded-full bg-rose-600" />
-              Recording in progress
-            </div>
-          )}
-
-          {audioBlob && !recording && (
-            <audio
-              className="mt-5 w-full"
-              controls
-              src={URL.createObjectURL(audioBlob)}
+          <div className="h-3 rounded-full bg-gray-100">
+            <div
+              className={`h-3 rounded-full transition-all ${
+                recording ? "bg-red-500" : audioBlob ? "bg-emerald-500" : "bg-indigo-600"
+              }`}
+              style={{ width: audioBlob ? "100%" : recording ? "64%" : "18%" }}
             />
-          )}
+          </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          {result ? (
-            <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-              <div className="grid place-items-center">
-                <div
-                  className="grid h-56 w-56 place-items-center rounded-full p-4 transition-all duration-700"
-                  style={gaugeStyle}
-                >
-                  <div className="grid h-full w-full place-items-center rounded-full bg-white">
-                    <div className="text-center">
-                      <p className="text-5xl font-black text-slate-950">
-                        {accuracy}%
-                      </p>
-                      <p className="mt-1 text-sm font-bold text-slate-500">
-                        Accuracy
-                      </p>
-                    </div>
+        {recording && (
+          <div className="mt-5 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-red-600">
+            <span className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
+            Recording in progress
+          </div>
+        )}
+
+        {audioBlob && !recording && (
+          <audio className="mt-5 w-full" controls src={URL.createObjectURL(audioBlob)} />
+        )}
+      </Card>
+
+      <ExamplePanel
+        examples={examples}
+        onSelect={(example) => {
+          setTargetText(example.text);
+          notify.info("Example loaded.");
+        }}
+      />
+    </div>
+  );
+
+  const resultSection = (
+    <Card>
+      {loading ? (
+        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+          <Skeleton className="h-56 w-56 justify-self-center rounded-full" />
+          <div className="space-y-4">
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        </div>
+      ) : result ? (
+        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+          <div>
+            <h2 className="section-title text-center">Score</h2>
+            <div className="mt-5 grid place-items-center">
+              <div
+                className="grid h-56 w-56 place-items-center rounded-full p-4 transition-all duration-700"
+                style={gaugeStyle}
+              >
+                <div className="grid h-full w-full place-items-center rounded-full bg-white shadow-inner">
+                  <div className="text-center">
+                    <p className="text-5xl font-bold text-gray-950">{accuracy}%</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-500">Accuracy</p>
                   </div>
                 </div>
               </div>
-
-              <div>
-                <div className="rounded-md bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase tracking-wider text-slate-500">
-                    Transcript
-                  </p>
-                  <p className="mt-2 text-2xl font-black leading-10 text-slate-950">
-                    {result.transcript || "No clear speech detected"}
-                  </p>
-                </div>
-
-                <div className="mt-4 rounded-md bg-emerald-50 p-4 text-emerald-800">
-                  <p className="text-xs font-black uppercase tracking-wider">
-                    Feedback
-                  </p>
-                  <p className="mt-2 leading-7">{result.feedback}</p>
-                </div>
-
-                <div className="mt-4 space-y-3">
-                  {(result.phonemeIssues || []).map((issue, index) => (
-                    <div
-                      key={`${issue.sound}-${index}`}
-                      className="rounded-md border border-amber-200 bg-amber-50 p-4 text-amber-900"
-                    >
-                      <p className="font-black">{issue.sound}</p>
-                      <p className="mt-1 text-sm">{issue.feedback}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
-          ) : (
-            <div className="grid min-h-96 place-items-center rounded-md bg-slate-50 p-6 text-center text-slate-500">
-              Your pronunciation score and correction tips will appear here.
+          </div>
+
+          <div>
+            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                Transcript
+              </p>
+              <p className="mt-2 text-2xl font-bold leading-10 text-gray-950">
+                {result.transcript || "No clear speech detected"}
+              </p>
             </div>
-          )}
+
+            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-emerald-800">
+              <p className="text-xs font-bold uppercase tracking-wider">Feedback</p>
+              <p className="mt-2 leading-7">{result.feedback}</p>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {(result.phonemeIssues || []).map((issue, index) => (
+                <div
+                  key={`${issue.sound}-${index}`}
+                  className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-amber-900"
+                >
+                  <p className="font-bold">{issue.sound}</p>
+                  <p className="mt-1 text-sm">{issue.feedback}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      ) : (
+        <EmptyState
+          icon="mic"
+          title="Pronunciation results will appear here."
+          description="Record a sample and submit it to see score, transcript, and correction tips."
+        />
+      )}
+    </Card>
+  );
+
+  return (
+    <ToolWorkspace
+      eyebrow="Pronunciation"
+      title="Record Tamil speech and get targeted feedback."
+      description="Practice aloud, submit your recording, and review accuracy, transcript, and sound-specific tips."
+      error={error}
+      onRetry={audioBlob ? submitAudio : undefined}
+      input={inputSection}
+      result={resultSection}
+      gridClassName="lg:grid-cols-[440px_1fr]"
+    />
   );
 }
 
