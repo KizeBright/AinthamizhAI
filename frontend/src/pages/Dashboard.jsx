@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import {
+  Button,
+  Card,
+  ErrorAlert,
+  Icon,
+  LoginRequired,
+  PageHeader,
+  StatCard,
+  ToolSkeleton,
+} from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import API from "../services/api";
+import { notify } from "../utils/notifications";
 
 const emptyStats = {
   totalTranslations: 0,
@@ -50,9 +61,10 @@ function Dashboard() {
         setStats({ ...emptyStats, ...statsResponse.data.stats });
         setActivity(activityResponse.data.activity || []);
       } catch (err) {
-        setError(
-          err?.response?.data?.message || "Unable to load dashboard analytics.",
-        );
+        const message =
+          err?.response?.data?.message || "Unable to load dashboard analytics.";
+        setError(message);
+        notify.error(message);
       } finally {
         setLoading(false);
       }
@@ -61,181 +73,184 @@ function Dashboard() {
     loadDashboard();
   }, [currentUser]);
 
-  const kpis = useMemo(
-    () => {
-      const pronunciationScores = activity
-        .map((item) => item.metadata?.accuracy)
-        .filter((value) => Number.isFinite(value));
-      const averageAccuracy =
-        pronunciationScores.length > 0
-          ? Math.round(
-              pronunciationScores.reduce((sum, value) => sum + value, 0) /
-                pronunciationScores.length,
-            )
-          : 0;
+  const { kpis, averageAccuracy, totalActions } = useMemo(() => {
+    const pronunciationScores = activity
+      .map((item) => item.metadata?.accuracy)
+      .filter((value) => Number.isFinite(value));
+    const average =
+      pronunciationScores.length > 0
+        ? Math.round(
+            pronunciationScores.reduce((sum, value) => sum + value, 0) /
+              pronunciationScores.length,
+          )
+        : 0;
 
-      return [
-        {
-        label: "Translations",
-        value: stats.totalTranslations,
-        detail: "Tanglish converted",
-        color: "border-emerald-200 bg-emerald-50 text-emerald-800",
-      },
-      {
-        label: "OCR Scans",
-        value: stats.ocrScans,
-        detail: "Images processed",
-        color: "border-sky-200 bg-sky-50 text-sky-800",
-      },
-      {
-        label: "Pronunciation",
-        value: stats.pronunciationAttempts,
-        detail: "Speech attempts",
-        color: "border-violet-200 bg-violet-50 text-violet-800",
-      },
-      {
-        label: "Speech Accuracy",
-        value: `${averageAccuracy}%`,
-        detail: "Recent average",
-        color: "border-teal-200 bg-teal-50 text-teal-800",
-      },
-      {
-        label: "Sentences",
-        value: stats.sentenceGenerations,
-        detail: "Grammar outputs",
-        color: "border-amber-200 bg-amber-50 text-amber-800",
-      },
-      {
-        label: "Entities",
-        value: stats.entityAnalyses,
-        detail: "Text analyses",
-        color: "border-rose-200 bg-rose-50 text-rose-800",
-      },
+    const cards = [
+      ["Translations", stats.totalTranslations, "translate", "Tanglish converted"],
+      ["Pronunciation Attempts", stats.pronunciationAttempts, "mic", "Speech checks"],
+      ["OCR Scans", stats.ocrScans, "scan", "Images processed"],
+      ["Sentences Generated", stats.sentenceGenerations, "sentence", "Grammar outputs"],
     ];
-    },
-    [activity, stats],
-  );
+
+    return {
+      averageAccuracy: average,
+      totalActions:
+        stats.totalTranslations +
+        stats.pronunciationAttempts +
+        stats.ocrScans +
+        stats.sentenceGenerations +
+        stats.entityAnalyses,
+      kpis: cards.map(([label, value, icon, detail]) => ({ label, value, icon, detail })),
+    };
+  }, [activity, stats]);
 
   if (authLoading) {
-    return <div className="mx-auto max-w-7xl px-4 py-10">Loading...</div>;
+    return <ToolSkeleton variant="dashboard" />;
   }
 
   if (!currentUser) {
-    return (
-      <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <h1 className="text-3xl font-black text-slate-950">
-          Sign in to view your dashboard
-        </h1>
-        <p className="mt-3 text-slate-600">
-          Your Tamil practice history and analytics are stored securely per user.
-        </p>
-        <Link
-          to="/login"
-          className="mt-6 inline-flex rounded-md bg-emerald-700 px-5 py-3 font-bold text-white transition hover:bg-emerald-800"
-        >
-          Login
-        </Link>
-      </section>
-    );
+    return <LoginRequired message="Your dashboard keeps Tamil practice history secure per user." />;
   }
 
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
-            Dashboard
-          </p>
-          <h1 className="mt-2 text-3xl font-black text-slate-950 sm:text-4xl">
-            Welcome back{currentUser.displayName ? `, ${currentUser.displayName}` : ""}
-          </h1>
-          <p className="mt-2 text-slate-600">
-            A quick view of your Tamil learning activity.
-          </p>
-        </div>
+  const displayName =
+    currentUser.user_metadata?.displayName ||
+    currentUser.user_metadata?.full_name ||
+    currentUser.email;
 
-        <Link
-          to="/translator"
-          className="rounded-md bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
-        >
-          Start translating
-        </Link>
-      </div>
+  return (
+    <section className="page-shell fade-in">
+      <PageHeader
+        eyebrow="Dashboard"
+        title={`Welcome back${displayName ? `, ${displayName}` : ""}`}
+        description="A quick view of your Tamil learning activity, recent practice, and next actions."
+        action={
+          <Button as={Link} to="/translator">
+            Start translating
+            <Icon name="arrow" className="h-4 w-4" />
+          </Button>
+        }
+      />
 
       {error && (
-        <div className="mb-6 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700">
-          {error}
-        </div>
+        <ErrorAlert className="mb-6" title="Dashboard unavailable" description={error} />
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {kpis.map((item) => (
-          <article
+          <StatCard
             key={item.label}
-            className={`rounded-lg border p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md ${item.color}`}
-          >
-            <p className="text-sm font-bold">{item.label}</p>
-            <p className="mt-4 text-4xl font-black">{loading ? "..." : item.value}</p>
-            <p className="mt-2 text-sm opacity-80">{item.detail}</p>
-          </article>
+            title={item.label}
+            value={loading ? "..." : item.value}
+            icon={item.icon}
+            trend={item.detail}
+            iconAccent={item.icon === "mic" || item.label === "Pronunciation Attempts" ? "gold" : "indigo"}
+          />
         ))}
       </div>
 
-      <div className="mt-8 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div>
-            <h2 className="text-lg font-black text-slate-950">
-              Recent Activities
-            </h2>
-            <p className="text-sm text-slate-500">
-              Latest successful AI feature usage
-            </p>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <Card>
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="section-title">Recent Activity</h2>
+              <p className="mt-1 helper-text">Latest successful AI feature usage.</p>
+            </div>
+            <Icon name="progress" className="h-6 w-6 text-indigo-500" />
           </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-left">
-            <thead className="bg-slate-50">
-              <tr>
-                {["Feature", "Count Field", "Amount", "When"].map((heading) => (
-                  <th
-                    key={heading}
-                    className="px-5 py-3 text-xs font-black uppercase tracking-wider text-slate-500"
-                  >
-                    {heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {activity.length === 0 ? (
-                <tr>
-                  <td className="px-5 py-8 text-center text-slate-500" colSpan="4">
-                    No activity yet. Try a translation to get started.
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-100 text-xs font-semibold uppercase text-gray-500">
+                  {["Feature", "Amount", "When"].map((heading) => (
+                    <th key={heading} className="py-3 pr-5">
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                activity.map((item) => (
-                  <tr key={item.id} className="transition hover:bg-slate-50">
-                    <td className="px-5 py-4">
-                      <span className="rounded-md bg-slate-100 px-3 py-1 text-sm font-bold text-slate-700">
-                        {item.label || item.feature}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-slate-600">
-                      {item.countField}
-                    </td>
-                    <td className="px-5 py-4 text-sm font-bold text-slate-950">
-                      +{item.amount}
-                    </td>
-                    <td className="px-5 py-4 text-sm text-slate-500">
-                      {formatDate(item.createdAt)}
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {activity.length === 0 ? (
+                  <tr>
+                    <td className="py-8 text-center text-gray-500" colSpan="3">
+                      No activity yet. Try a translation to get started.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  activity.slice(0, 8).map((item) => (
+                    <tr key={item.id} className="transition hover:bg-gray-50">
+                      <td className="py-4 pr-5">
+                        <span className="badge border-indigo-100 bg-indigo-50 text-indigo-700">
+                          {item.label || item.feature}
+                        </span>
+                      </td>
+                      <td className="py-4 pr-5 text-sm font-semibold text-gray-950">
+                        +{item.amount}
+                      </td>
+                      <td className="py-4 pr-5 text-sm text-gray-500">
+                        {formatDate(item.createdAt)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <div className="grid gap-6">
+          <Card>
+            <h2 className="section-title">Quick Actions</h2>
+            <div className="mt-5 grid gap-3">
+              {[
+                ["Translate text", "/translator", "translate"],
+                ["Generate sentence", "/sentence", "sentence"],
+                ["Check pronunciation", "/pronunciation", "mic"],
+                ["Scan image", "/ocr", "scan"],
+              ].map(([label, href, icon]) => (
+                <Link
+                  key={href}
+                  to={href}
+                  className="flex items-center justify-between rounded-2xl border border-gray-100 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                >
+                  <span className="flex items-center gap-3">
+                    <Icon name={icon} className="h-4 w-4" />
+                    {label}
+                  </span>
+                  <Icon name="arrow" className="h-4 w-4" />
+                </Link>
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            <h2 className="section-title">Learning Progress</h2>
+            <div className="mt-5 space-y-5">
+              <div>
+                <div className="mb-2 flex justify-between text-sm font-semibold text-gray-700">
+                  <span>Recent pronunciation accuracy</span>
+                  <span>{averageAccuracy}%</span>
+                </div>
+                <div className="h-3 rounded-full bg-gray-100">
+                  <div
+                    className="h-3 rounded-full progress-gold transition-all"
+                    style={{ width: `${Math.min(averageAccuracy, 100)}%` }}
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="mb-2 flex justify-between text-sm font-semibold text-gray-700">
+                  <span>Total practice actions</span>
+                  <span>{totalActions}</span>
+                </div>
+                <div className="h-3 rounded-full bg-gray-100">
+                  <div
+                    className="h-3 rounded-full progress-gold transition-all"
+                    style={{ width: `${Math.min(totalActions * 6, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </section>
