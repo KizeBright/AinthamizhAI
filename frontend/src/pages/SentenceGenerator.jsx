@@ -205,12 +205,12 @@ function SentenceGenerator() {
           </div>
         ) : result ? (
           <div>
-            <blockquote className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-6">
-              <p className="text-3xl font-bold leading-[1.8] text-gray-950">
+            <blockquote className="rounded-2xl border border-indigo-100 bg-indigo-50/60 dark:border-indigo-800 dark:bg-indigo-900/30 p-6">
+              <p className="text-3xl font-bold leading-[1.8] text-gray-950 dark:text-gray-50">
                 {result.sentence}
               </p>
               {result.dialogue?.length > 0 && (
-                <div className="mt-5 space-y-3 text-xl font-semibold leading-9 text-gray-800">
+                <div className="mt-5 space-y-3 text-xl font-semibold leading-9 text-gray-800 dark:text-gray-200">
                   {result.dialogue.map((line, index) => (
                     <p key={`${line}-${index}`}>{line}</p>
                   ))}
@@ -219,11 +219,11 @@ function SentenceGenerator() {
             </blockquote>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-emerald-800">
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40 p-4 text-emerald-800 dark:text-emerald-300">
                 <p className="text-xs font-bold uppercase tracking-wider">Transliteration</p>
                 <p className="mt-2 font-semibold">{result.transliteration}</p>
               </div>
-              <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-amber-800">
+              <div className="rounded-2xl border border-amber-100 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40 p-4 text-amber-800 dark:text-amber-300">
                 <p className="text-xs font-bold uppercase tracking-wider">Grammar Note</p>
                 <p className="mt-2 leading-7">{result.grammarNoteTamil}</p>
               </div>

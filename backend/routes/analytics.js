@@ -190,7 +190,7 @@ router.post("/increment", async (req, res, next) => {
     const metadata = normalizeMetadata(req.body.metadata);
     const { data: user, error: userError } = await supabase
       .from("users")
-      .select("analytics")
+      .select("analytics, points, current_streak, best_streak, last_active_date")
       .eq("id", userId)
       .single();
 
@@ -202,6 +202,10 @@ router.post("/increment", async (req, res, next) => {
       await supabase.from("users").insert({
         id: userId,
         analytics: DEFAULT_ANALYTICS,
+        points: 0,
+        current_streak: 0,
+        best_streak: 0,
+        last_active_date: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
@@ -214,9 +218,32 @@ router.post("/increment", async (req, res, next) => {
       [config.countField]: (existingAnalytics[config.countField] || 0) + amount,
     };
 
+    const todayDate = new Date().toISOString().slice(0, 10);
+    const lastDate = user?.last_active_date ? String(user.last_active_date).slice(0, 10) : null;
+    const isFirstSessionToday = lastDate !== todayDate;
+
+    const pointsToAdd = isFirstSessionToday ? 10 : 5;
+    const updatedPoints = (user?.points || 0) + pointsToAdd;
+
+    let updatedCurrentStreak = user?.current_streak || 0;
+    if (isFirstSessionToday) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayDate = yesterday.toISOString().slice(0, 10);
+      updatedCurrentStreak = lastDate === yesterdayDate ? updatedCurrentStreak + 1 : 1;
+    }
+    const updatedBestStreak = Math.max(user?.best_streak || 0, updatedCurrentStreak);
+
     const { error: updateError } = await supabase
       .from("users")
-      .update({ analytics: updatedAnalytics, updated_at: new Date().toISOString() })
+      .update({
+        analytics: updatedAnalytics,
+        points: updatedPoints,
+        current_streak: updatedCurrentStreak,
+        best_streak: updatedBestStreak,
+        last_active_date: todayDate,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", userId);
 
     if (updateError) {
@@ -241,8 +268,95 @@ router.post("/increment", async (req, res, next) => {
       message: "Analytics updated.",
       userId,
       stats: updatedAnalytics,
+      points: updatedPoints,
+      pointsAdded: pointsToAdd,
+      currentStreak: updatedCurrentStreak,
+      bestStreak: updatedBestStreak,
     });
   } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/session", async (req, res, next) => {
+  try {
+    const userId = req.user.uid;
+    console.log("[session] userId:", userId);
+
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("points, current_streak, best_streak, last_active_date")
+      .eq("id", userId)
+      .single();
+
+    console.log("[session] fetched user:", user, "error:", userError);
+
+    if (userError && userError.code !== "PGRST116") throw userError;
+
+    if (!user) {
+      console.log("[session] no user row found, inserting...");
+      const { error: insertError } = await supabase.from("users").insert({
+        id: userId,
+        analytics: {},
+        points: 10,
+        current_streak: 1,
+        best_streak: 1,
+        last_active_date: new Date().toISOString().slice(0, 10),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      if (insertError) console.error("[session] insert error:", insertError);
+      return res.status(200).json({ message: "Session recorded.", points: 10, currentStreak: 1, bestStreak: 1 });
+    }
+
+    const todayDate = new Date().toISOString().slice(0, 10);
+    const lastDate = user?.last_active_date ? String(user.last_active_date).slice(0, 10) : null;
+    console.log("[session] todayDate:", todayDate, "lastDate:", lastDate);
+
+    if (lastDate === todayDate) {
+      return res.status(200).json({
+        message: "Session already recorded today.",
+        points: user.points,
+        currentStreak: user.current_streak,
+        bestStreak: user.best_streak,
+      });
+    }
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayDate = yesterday.toISOString().slice(0, 10);
+
+    const updatedCurrentStreak = lastDate === yesterdayDate ? (user?.current_streak || 0) + 1 : 1;
+    const updatedBestStreak = Math.max(user?.best_streak || 0, updatedCurrentStreak);
+    const updatedPoints = (user?.points || 0) + 10;
+
+    console.log("[session] updating — points:", updatedPoints, "streak:", updatedCurrentStreak);
+
+    const { error: updateError, data: updateData } = await supabase
+      .from("users")
+      .update({
+        points: updatedPoints,
+        current_streak: updatedCurrentStreak,
+        best_streak: updatedBestStreak,
+        last_active_date: todayDate,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId)
+      .select();
+
+    console.log("[session] update result:", updateData, "error:", updateError);
+
+    if (updateError) throw updateError;
+
+    return res.status(200).json({
+      message: "Session recorded.",
+      points: updatedPoints,
+      pointsAdded: 10,
+      currentStreak: updatedCurrentStreak,
+      bestStreak: updatedBestStreak,
+    });
+  } catch (error) {
+    console.error("[session] caught error:", error);
     return next(error);
   }
 });

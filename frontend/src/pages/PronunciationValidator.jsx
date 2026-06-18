@@ -143,7 +143,7 @@ function PronunciationValidator() {
         <label className="mt-5 block">
           <span className="field-label">Target Tamil text</span>
           <textarea
-            className="field-control min-h-32 resize-none bg-gray-50 text-xl font-semibold leading-9 focus:bg-white"
+            className="field-control min-h-32 resize-none bg-gray-50 dark:bg-gray-800/60 text-xl font-semibold leading-9 focus:bg-white dark:focus:bg-gray-800"
             value={targetText}
             onChange={(event) => setTargetText(event.target.value)}
           />
@@ -169,11 +169,11 @@ function PronunciationValidator() {
         </div>
 
         <div className="mt-6">
-          <div className="mb-2 flex justify-between text-sm font-semibold text-gray-700">
+          <div className="mb-2 flex justify-between text-sm font-semibold text-gray-700 dark:text-gray-300">
             <span>Recording readiness</span>
             <span>{audioBlob ? "Ready" : recording ? "Recording" : "Waiting"}</span>
           </div>
-          <div className="h-3 rounded-full bg-gray-100">
+          <div className="h-3 rounded-full bg-gray-100 dark:bg-gray-800">
             <div
               className={`h-3 rounded-full transition-all ${
                 recording ? "bg-red-500" : audioBlob ? "bg-emerald-500" : "bg-indigo-600"
@@ -184,7 +184,7 @@ function PronunciationValidator() {
         </div>
 
         {recording && (
-          <div className="mt-5 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-red-600">
+          <div className="mt-5 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 dark:border-red-900 dark:bg-red-950/40 p-4 text-red-600 dark:text-red-400">
             <span className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
             Recording in progress
           </div>
@@ -225,10 +225,10 @@ function PronunciationValidator() {
                 className="grid h-56 w-56 place-items-center rounded-full p-4 transition-all duration-700"
                 style={gaugeStyle}
               >
-                <div className="grid h-full w-full place-items-center rounded-full bg-white shadow-inner">
+                <div className="grid h-full w-full place-items-center rounded-full bg-white dark:bg-gray-900 shadow-inner">
                   <div className="text-center">
-                    <p className="text-5xl font-bold text-gray-950">{accuracy}%</p>
-                    <p className="mt-1 text-sm font-semibold text-gray-500">Accuracy</p>
+                    <p className="text-5xl font-bold text-gray-950 dark:text-gray-50">{accuracy}%</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-500 dark:text-gray-400">Accuracy</p>
                   </div>
                 </div>
               </div>
@@ -236,16 +236,16 @@ function PronunciationValidator() {
           </div>
 
           <div>
-            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+            <div className="rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Transcript
               </p>
-              <p className="mt-2 text-2xl font-bold leading-10 text-gray-950">
+              <p className="mt-2 text-2xl font-bold leading-10 text-gray-950 dark:text-gray-50">
                 {result.transcript || "No clear speech detected"}
               </p>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-emerald-800">
+            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40 p-4 text-emerald-800 dark:text-emerald-300">
               <p className="text-xs font-bold uppercase tracking-wider">Feedback</p>
               <p className="mt-2 leading-7">{result.feedback}</p>
             </div>
@@ -254,7 +254,7 @@ function PronunciationValidator() {
               {(result.phonemeIssues || []).map((issue, index) => (
                 <div
                   key={`${issue.sound}-${index}`}
-                  className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-amber-900"
+                  className="rounded-2xl border border-amber-100 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40 p-4 text-amber-900 dark:text-amber-300"
                 >
                   <p className="font-bold">{issue.sound}</p>
                   <p className="mt-1 text-sm">{issue.feedback}</p>

@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 
 import { Button, Card, Icon } from "../components/ui";
+import Footer from "../components/Footer";
+
 
 function Home() {
   const features = [
@@ -40,14 +42,14 @@ function Home() {
     <div className="fade-in">
       <section className="page-shell grid min-h-[calc(100vh-190px)] gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <div>
-          <span className="badge border-indigo-100 bg-indigo-50 text-indigo-700">
+          <span className="badge border-indigo-100 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
             <Icon name="spark" className="h-4 w-4" />
             AI-powered Tamil learning
           </span>
-          <h1 className="mt-6 max-w-3xl text-5xl font-bold leading-tight text-gray-950 sm:text-6xl">
+          <h1 className="mt-6 max-w-3xl text-5xl font-bold leading-tight text-gray-950 dark:text-gray-50 sm:text-6xl">
             Learn Tamil with focused tools for real practice.
           </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-500">
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-500 dark:text-gray-400">
             Ainthamizh AI combines translation, pronunciation feedback, OCR,
             entity analysis, and grammar generation in one clean learning workspace.
           </p>
@@ -63,24 +65,24 @@ function Home() {
         </div>
 
         <Card className="relative overflow-hidden p-0">
-          <div className="border-b border-gray-100 bg-gray-50 px-5 py-4">
-            <p className="text-sm font-semibold text-gray-500">Today&apos;s Tamil desk</p>
+          <div className="border-b border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/60 px-5 py-4">
+            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Today&apos;s Tamil desk</p>
           </div>
           <div className="grid gap-4 p-5">
             {features.slice(0, 4).map((feature, index) => (
               <Link
                 key={feature.title}
                 to={feature.href}
-                className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 transition hover:border-indigo-200 hover:bg-indigo-50/40"
+                className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800/50 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/40 dark:hover:border-indigo-700 dark:hover:bg-indigo-900/20"
               >
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-indigo-50 text-indigo-600">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
                   <Icon name={feature.icon} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-gray-950">{feature.title}</p>
-                  <p className="mt-1 truncate text-sm text-gray-500">{feature.description}</p>
+                  <p className="font-semibold text-gray-950 dark:text-gray-100">{feature.title}</p>
+                  <p className="mt-1 truncate text-sm text-gray-500 dark:text-gray-400">{feature.description}</p>
                 </div>
-                <span className="text-sm font-semibold text-indigo-600">0{index + 1}</span>
+                <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">0{index + 1}</span>
               </Link>
             ))}
           </div>
@@ -90,12 +92,12 @@ function Home() {
       <section className="page-shell pt-0">
         <div className="mb-6">
           <h2 className="section-title">Practice Tools</h2>
-          <p className="mt-2 text-gray-500">Purpose-built cards for language learning workflows.</p>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">Purpose-built cards for language learning workflows.</p>
         </div>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
           {features.map((feature) => (
             <Card key={feature.title} className="flex flex-col">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-indigo-50 text-indigo-600">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
                 <Icon name={feature.icon} />
               </span>
               <h3 className="mt-5 card-title">{feature.title}</h3>
@@ -108,6 +110,12 @@ function Home() {
           ))}
         </div>
       </section>
+
+      <footer className="page-shell pt-0">
+        <div className="pb-8">
+          <Footer />
+        </div>
+      </footer>
     </div>
   );
 }

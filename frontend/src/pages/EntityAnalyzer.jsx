@@ -86,7 +86,7 @@ function EntityAnalyzer() {
           <span className="text-xs font-semibold text-gray-400">{text.length}/6000</span>
         </div>
         <textarea
-          className="field-control min-h-96 resize-none bg-gray-50 text-lg leading-8 focus:bg-white"
+          className="field-control min-h-96 resize-none text-gray-900 dark:text-gray-100 text-lg leading-8"
           value={text}
           maxLength={6000}
           onChange={(event) => setText(event.target.value)}
@@ -126,16 +126,16 @@ function EntityAnalyzer() {
         </div>
       ) : analysis ? (
         <>
-          <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Summary</p>
-            <p className="mt-2 leading-8 text-gray-700">{analysis.summary}</p>
+          <div className="rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Summary</p>
+            <p className="mt-2 leading-8 text-gray-900 dark:text-gray-100">{analysis.summary}</p>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
             {(analysis.entities || []).map((entity, index) => (
               <span
                 key={`${entity.text}-chip-${index}`}
-                className={`badge ${typeStyles[entity.type] || "border-gray-200 bg-gray-50 text-gray-700"}`}
+                className={`badge ${typeStyles[entity.type] || "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"}`}
               >
                 {entity.text} · {entity.type}
               </span>

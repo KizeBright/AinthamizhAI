@@ -1,9 +1,26 @@
 import { useState } from "react";
 import API from "../services/api";
 
+import {
+  Button,
+  Card,
+  Icon,
+  ToolWorkspace,
+  EmptyState,
+  Skeleton,
+  LoginRequired,
+} from "../components/ui";
+import { useAuth } from "../context/AuthContext";
+import { useState } from "react";
+
+import API from "../services/api";
+
 function Translator() {
+  const { currentUser } = useAuth();
   const [text, setText] = useState("");
   const [result, setResult] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const translateText = async () => {
     try {

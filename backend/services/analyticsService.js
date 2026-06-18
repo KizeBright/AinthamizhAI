@@ -50,7 +50,7 @@ const recordFeatureUsage = async ({
   const config = FEATURE_CONFIG[feature];
   const { data: user, error: userError } = await supabase
     .from("users")
-    .select("analytics")
+    .select("analytics, points, current_streak, best_streak, last_active_date")
     .eq("id", userId)
     .single();
 
@@ -62,6 +62,10 @@ const recordFeatureUsage = async ({
     await supabase.from("users").insert({
       id: userId,
       analytics: {},
+      points: 0,
+      current_streak: 0,
+      best_streak: 0,
+      last_active_date: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
@@ -73,9 +77,32 @@ const recordFeatureUsage = async ({
     [config.countField]: (existingAnalytics[config.countField] || 0) + amount,
   };
 
+  const todayDate = new Date().toISOString().slice(0, 10);
+  const lastDate = user?.last_active_date ? String(user.last_active_date).slice(0, 10) : null;
+  const isFirstSessionToday = lastDate !== todayDate;
+
+  const pointsToAdd = isFirstSessionToday ? 10 : 5;
+  const updatedPoints = (user?.points || 0) + pointsToAdd;
+
+  let updatedCurrentStreak = user?.current_streak || 0;
+  if (isFirstSessionToday) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayDate = yesterday.toISOString().slice(0, 10);
+    updatedCurrentStreak = lastDate === yesterdayDate ? updatedCurrentStreak + 1 : 1;
+  }
+  const updatedBestStreak = Math.max(user?.best_streak || 0, updatedCurrentStreak);
+
   const { error: updateError } = await supabase
     .from("users")
-    .update({ analytics: updatedAnalytics, updated_at: new Date().toISOString() })
+    .update({
+      analytics: updatedAnalytics,
+      points: updatedPoints,
+      current_streak: updatedCurrentStreak,
+      best_streak: updatedBestStreak,
+      last_active_date: todayDate,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", userId);
 
   if (updateError) {

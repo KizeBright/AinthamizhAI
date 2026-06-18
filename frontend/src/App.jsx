@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 
 import Navbar from "./components/Navbar";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -20,7 +21,7 @@ function App() {
         <Toaster position="top-right" />
         <Navbar />
 
-        <main className="min-h-screen bg-[#FAFAFA]">
+        <main className="min-h-screen bg-[var(--color-background)]">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -30,6 +31,7 @@ function App() {
             <Route path="/pronunciation" element={<PronunciationValidator />} />
             <Route path="/ocr" element={<OCRScanner />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
       </BrowserRouter>

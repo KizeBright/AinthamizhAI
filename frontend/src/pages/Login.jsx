@@ -144,14 +144,14 @@ function Login() {
     <section className="page-shell fade-in flex min-h-[calc(100vh-98px)] items-center">
       <div className="grid w-full gap-8 lg:grid-cols-[1fr_460px] lg:items-center">
         <div className="max-w-2xl">
-          <span className="badge border-indigo-100 bg-indigo-50 text-indigo-700">
+          <span className="badge border-indigo-100 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
             <Icon name="home" className="h-4 w-4" />
             Ainthamizh AI
           </span>
-          <h1 className="mt-6 text-5xl font-bold leading-tight text-gray-950">
+          <h1 className="mt-6 text-5xl font-bold leading-tight text-gray-950 dark:text-gray-50">
             Your Tamil practice, saved and organized.
           </h1>
-          <p className="mt-5 text-lg leading-8 text-gray-500">
+          <p className="mt-5 text-lg leading-8 text-gray-500 dark:text-gray-400">
             Sign in to track translations, pronunciation attempts, OCR scans,
             generated sentences, and learning progress from one dashboard.
           </p>
@@ -170,7 +170,7 @@ function Login() {
               }}
             />
           ) : (
-            <div className="mb-6 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+            <div className="mb-6 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
               Password reset verified. Set your new password below.
             </div>
           )}
@@ -242,7 +242,7 @@ function Login() {
                     type="button"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword((value) => !value)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
                   >
                     <Icon
                       name={showPassword ? "eyeOff" : "eye"}

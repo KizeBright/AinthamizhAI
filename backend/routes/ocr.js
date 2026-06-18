@@ -134,42 +134,45 @@ router.post("/", authMiddleware, conditionalBody, async (req, res, next) => {
       throw error;
     }
 
-    const ocrResult = await generateJson({
-      systemInstruction: OCR_SYSTEM_PROMPT,
-      temperature: 0.05,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: "Extract Tanglish or Tamil text from this image for a Tamil learning app.",
-            },
-            {
-              inlineData: {
-                data: image.base64,
-                mimeType: image.mimeType,
-              },
-            },
-          ],
-        },
-      ],
-    });
+    // Primary: Tesseract.js (eng+tam)
+    let extractedText = "";
+    let ocrResult = { extractedText: "", lines: [], confidence: 0, notes: "" };
 
-    let extractedText =
-      typeof ocrResult.extractedText === "string"
-        ? ocrResult.extractedText.trim()
-        : "";
+    try {
+      const tesseractText = await runTesseract(image.base64, "eng+tam");
+      if (tesseractText && tesseractText.trim().length > 0) {
+        extractedText = tesseractText.trim();
+        ocrResult = {
+          extractedText,
+          lines: extractedText.split("\n").filter((l) => l.trim()),
+          confidence: 0.85,
+          notes: "",
+        };
+      }
+    } catch (e) {
+      // Tesseract failed, fall through to Gemini
+    }
 
-    // Fallback to local Tesseract if generative OCR returns nothing
+    // Fallback: Gemini vision if Tesseract returns nothing
     if (!extractedText) {
       try {
-        const localText = await runTesseract(image.base64, "eng");
-
-        if (localText && localText.trim().length > 0) {
-          extractedText = localText.trim();
-        }
+        const geminiResult = await generateJson({
+          systemInstruction: OCR_SYSTEM_PROMPT,
+          temperature: 0.05,
+          contents: [
+            {
+              role: "user",
+              parts: [
+                { text: "Extract Tanglish or Tamil text from this image for a Tamil learning app." },
+                { inlineData: { data: image.base64, mimeType: image.mimeType } },
+              ],
+            },
+          ],
+        });
+        ocrResult = geminiResult;
+        extractedText = typeof geminiResult.extractedText === "string" ? geminiResult.extractedText.trim() : "";
       } catch (e) {
-        // ignore fallback errors
+        // both engines failed
       }
     }
 

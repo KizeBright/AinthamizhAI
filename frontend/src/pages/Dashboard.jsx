@@ -204,7 +204,7 @@ function Dashboard() {
           <div className="overflow-x-auto">
             <table className="min-w-full text-left">
               <thead>
-                <tr className="border-b border-gray-100 text-xs font-semibold uppercase text-gray-500">
+                <tr className="border-b border-gray-100 dark:border-gray-800 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
                   {["Feature", "Details", "Amount", "When"].map((heading) => (
                     <th key={heading} className="py-3 pr-5">
                       {heading}
@@ -212,7 +212,7 @@ function Dashboard() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {activity.length === 0 ? (
                   <tr>
                     <td className="py-8 text-center text-gray-500" colSpan="4">
@@ -221,19 +221,19 @@ function Dashboard() {
                   </tr>
                 ) : (
                   activity.slice(0, 8).map((item) => (
-                    <tr key={item.id} className="transition hover:bg-gray-50">
+                    <tr key={item.id} className="transition hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="py-4 pr-5">
                         <span className="badge border-indigo-100 bg-indigo-50 text-indigo-700">
                           {item.label || item.feature}
                         </span>
                       </td>
-                      <td className="py-4 pr-5 text-sm text-gray-600">
+                      <td className="py-4 pr-5 text-sm text-gray-600 dark:text-gray-400">
                         {getActivityDetail(item)}
                       </td>
-                      <td className="py-4 pr-5 text-sm font-semibold text-gray-950">
+                      <td className="py-4 pr-5 text-sm font-semibold text-gray-950 dark:text-gray-50">
                         +{item.amount}
                       </td>
-                      <td className="py-4 pr-5 text-sm text-gray-500">
+                      <td className="py-4 pr-5 text-sm text-gray-500 dark:text-gray-400">
                         {formatDate(item.createdAt)}
                       </td>
                     </tr>
@@ -257,7 +257,7 @@ function Dashboard() {
                 <Link
                   key={href}
                   to={href}
-                  className="flex items-center justify-between rounded-2xl border border-gray-100 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                  className="flex items-center justify-between rounded-2xl border border-gray-100 dark:border-gray-800 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 dark:hover:border-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300"
                 >
                   <span className="flex items-center gap-3">
                     <Icon name={icon} className="h-4 w-4" />
@@ -273,11 +273,11 @@ function Dashboard() {
             <h2 className="section-title">Learning Progress</h2>
             <div className="mt-5 space-y-5">
               <div>
-                <div className="mb-2 flex justify-between text-sm font-semibold text-gray-700">
+                <div className="mb-2 flex justify-between text-sm font-semibold text-gray-700 dark:text-gray-300">
                   <span>Recent pronunciation accuracy</span>
                   <span>{averageAccuracy}%</span>
                 </div>
-                <div className="h-3 rounded-full bg-gray-100">
+                <div className="h-3 rounded-full bg-gray-100 dark:bg-gray-800">
                   <div
                     className="h-3 rounded-full progress-gold transition-all"
                     style={{ width: `${Math.min(averageAccuracy, 100)}%` }}
@@ -285,11 +285,11 @@ function Dashboard() {
                 </div>
               </div>
               <div>
-                <div className="mb-2 flex justify-between text-sm font-semibold text-gray-700">
+                <div className="mb-2 flex justify-between text-sm font-semibold text-gray-700 dark:text-gray-300">
                   <span>Total practice actions</span>
                   <span>{totalActions}</span>
                 </div>
-                <div className="h-3 rounded-full bg-gray-100">
+                <div className="h-3 rounded-full bg-gray-100 dark:bg-gray-800">
                   <div
                     className="h-3 rounded-full progress-gold transition-all"
                     style={{ width: `${Math.min(totalActions * 6, 100)}%` }}

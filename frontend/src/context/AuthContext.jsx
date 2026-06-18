@@ -40,6 +40,7 @@ export function AuthProvider({ children }) {
             displayName: user.user_metadata?.displayName || user.user_metadata?.full_name,
             photoURL: user.user_metadata?.picture,
           });
+          await API.post("/analytics/session").catch(() => {});
         } catch (error) {
           setAuthError(
             error?.response?.data?.message ||
@@ -68,6 +69,7 @@ export function AuthProvider({ children }) {
               displayName: user.user_metadata?.displayName || user.user_metadata?.full_name,
               photoURL: user.user_metadata?.picture,
             });
+            await API.post("/analytics/session").catch(() => {});
           } else {
             setIdToken(null);
           }

@@ -4,25 +4,29 @@ const { GoogleGenAI } = require("@google/genai");
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
-let client;
+const keys = [
+  process.env.GEMINI_API_KEY_1,
+  process.env.GEMINI_API_KEY_2,
+  process.env.GEMINI_API_KEY_3,
+].filter(Boolean);
 
-const getGeminiClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+if (keys.length === 0) {
+  const k = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (k) keys.push(k);
+}
 
-  if (!apiKey) {
-    const error = new Error(
-      "Gemini API key is not configured. Set GEMINI_API_KEY or GOOGLE_API_KEY.",
-    );
+let current = 0;
+
+const getKey = () => {
+  if (keys.length === 0) {
+    const error = new Error("No Gemini API key configured. Set GEMINI_API_KEY_1, GEMINI_API_KEY_2, GEMINI_API_KEY_3 or GEMINI_API_KEY.");
     error.statusCode = 500;
     error.name = "ConfigurationError";
     throw error;
   }
-
-  if (!client) {
-    client = new GoogleGenAI({ apiKey });
-  }
-
-  return client;
+  const key = keys[current];
+  current = (current + 1) % keys.length;
+  return key;
 };
 
 const createGenerationConfig = ({
@@ -72,7 +76,9 @@ const generateText = async ({
   responseMimeType = "application/json",
   model = DEFAULT_MODEL,
 }) => {
-  const response = await getGeminiClient().models.generateContent({
+  const client = new GoogleGenAI({ apiKey: getKey() });
+
+  const response = await client.models.generateContent({
     model,
     contents,
     config: createGenerationConfig({

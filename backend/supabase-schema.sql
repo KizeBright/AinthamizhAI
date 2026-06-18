@@ -10,6 +10,10 @@ CREATE TABLE IF NOT EXISTS users (
   preferred_level TEXT,
   native_language TEXT,
   analytics JSONB DEFAULT '{}'::jsonb,
+  points INTEGER DEFAULT 0,
+  current_streak INTEGER DEFAULT 0,
+  best_streak INTEGER DEFAULT 0,
+  last_active_date DATE DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

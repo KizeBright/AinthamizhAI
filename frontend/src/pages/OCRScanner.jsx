@@ -134,8 +134,8 @@ function OCRScanner() {
           }}
           className={`mt-5 grid min-h-64 cursor-pointer place-items-center rounded-2xl border border-dashed p-6 text-center transition ${
             dragging
-              ? "border-indigo-300 bg-indigo-50"
-              : "border-gray-200 bg-gray-50 hover:border-indigo-200 hover:bg-indigo-50/50"
+              ? "border-indigo-300 bg-indigo-50 dark:border-indigo-600 dark:bg-indigo-900/30"
+              : "border-gray-200 bg-gray-50 hover:border-indigo-200 hover:bg-indigo-50/50 dark:border-gray-700 dark:bg-gray-800/40 dark:hover:border-indigo-700 dark:hover:bg-indigo-900/20"
           }`}
         >
           <input
@@ -145,10 +145,10 @@ function OCRScanner() {
             onChange={(event) => selectFile(event.target.files?.[0])}
           />
           <span>
-            <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-indigo-600 shadow-sm">
+            <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm">
               <Icon name="upload" className="h-6 w-6" />
             </span>
-            <span className="mt-4 block font-semibold text-gray-950">
+            <span className="mt-4 block font-semibold text-gray-950 dark:text-gray-100">
               Drop an image here or click to browse
             </span>
             <span className="mt-2 block helper-text">PNG, JPG, or WebP up to backend limits.</span>
@@ -174,8 +174,8 @@ function OCRScanner() {
         </div>
 
         {file && (
-          <div className="mt-5 rounded-2xl border border-gray-100 bg-white p-3">
-            <p className="mb-3 text-sm font-semibold text-gray-700">Image Preview</p>
+          <div className="mt-5 rounded-2xl border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800/50 p-3">
+            <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Image Preview</p>
             <img
               src={previewUrl}
               alt="Uploaded OCR preview"
@@ -219,24 +219,24 @@ function OCRScanner() {
           </div>
         ) : result ? (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+            <div className="rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Raw extracted text
               </p>
-              <p className="mt-3 whitespace-pre-wrap text-lg leading-8 text-gray-900">
+              <p className="mt-3 whitespace-pre-wrap text-lg leading-8 text-gray-900 dark:text-gray-100">
                 {extractedText}
               </p>
             </div>
-            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-indigo-700">
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 dark:border-indigo-800 dark:bg-indigo-900/30 p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
                 Tamil result
               </p>
-              <p className="mt-3 whitespace-pre-wrap text-2xl font-bold leading-10 text-gray-950">
+              <p className="mt-3 whitespace-pre-wrap text-2xl font-bold leading-10 text-gray-950 dark:text-gray-50">
                 {tamilText || "No Tamil conversion returned."}
               </p>
             </div>
             {result.ocr?.notes && (
-              <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-amber-800">
+              <div className="rounded-2xl border border-amber-100 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40 p-4 text-amber-800 dark:text-amber-300">
                 <p className="text-xs font-bold uppercase tracking-wider">Notes</p>
                 <p className="mt-2 leading-7">{result.ocr.notes}</p>
               </div>
