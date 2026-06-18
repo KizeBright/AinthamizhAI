@@ -7,11 +7,11 @@ function Translator() {
 
   const translateText = async () => {
     try {
-      const response = await API.post("/translate", {
+      const response = await API.post("/translator", {
         text,
       });
 
-      setResult(response.data.output);
+      setResult(response.data.data?.tamilText || "");
     } catch (error) {
       console.log(error);
     }

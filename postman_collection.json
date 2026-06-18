@@ -303,11 +303,11 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:5000/api/analytics/stats/{{userId}}",
+          "raw": "http://localhost:5000/api/analytics/stats",
           "protocol": "http",
           "host": ["localhost"],
           "port": "5000",
-          "path": ["api", "analytics", "stats", "{{userId}}"]
+          "path": ["api", "analytics", "stats"]
         }
       }
     },
@@ -322,11 +322,11 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:5000/api/analytics/activity/{{userId}}?limit=12",
+          "raw": "http://localhost:5000/api/analytics/activity?limit=12",
           "protocol": "http",
           "host": ["localhost"],
           "port": "5000",
-          "path": ["api", "analytics", "activity", "{{userId}}"],
+          "path": ["api", "analytics", "activity"],
           "query": [
             {
               "key": "limit",

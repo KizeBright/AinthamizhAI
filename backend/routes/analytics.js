@@ -109,11 +109,9 @@ const normalizeMetadata = (metadata) => {
 
 router.use(authMiddleware);
 
-router.get("/stats/:userId", async (req, res, next) => {
+router.get("/stats", async (req, res, next) => {
   try {
-    const { userId } = req.params;
-    ensureOwnUserAccess(req, userId);
-
+    const userId = req.user.uid;
     const { data: user, error } = await supabase
       .from("users")
       .select("analytics")
@@ -139,24 +137,10 @@ router.get("/stats/:userId", async (req, res, next) => {
   }
 });
 
-router.get("/activity/:userId", async (req, res, next) => {
+router.get("/activity", async (req, res, next) => {
   try {
-    const { userId } = req.params;
-    ensureOwnUserAccess(req, userId);
-
+    const userId = req.user.uid;
     const limit = parseLimit(req.query.limit);
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("id", userId)
-      .single();
-
-    if (userError || !user) {
-      return res.status(404).json({
-        error: "Not Found",
-        message: "User profile not found.",
-      });
-    }
 
     const { data: activities, error: activityError } = await supabase
       .from("activity_logs")
@@ -171,7 +155,7 @@ router.get("/activity/:userId", async (req, res, next) => {
 
     return res.status(200).json({
       userId,
-      activity: activities.map(serializeActivity),
+      activity: (activities || []).map(serializeActivity),
     });
   } catch (error) {
     return next(error);

@@ -36,8 +36,6 @@ const authMiddleware = async (req, res, next) => {
 
     const user = data.user;
 
-    console.log("TOKEN USER ID:", user.id);
-    
     req.user = {
       uid: user.id,
       email: user.email || null,

@@ -134,12 +134,24 @@ export function AuthProvider({ children }) {
   const forgotPassword = async (email) => {
     setAuthError("");
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
+      redirectTo: `${window.location.origin}/login?mode=recovery`,
     });
 
     if (error) {
       throw error;
     }
+  };
+
+  const updatePassword = async (password) => {
+    setAuthError("");
+    const { data, error } = await supabase.auth.updateUser({ password });
+
+    if (error) {
+      throw error;
+    }
+
+    await refreshToken();
+    return data.user;
   };
 
   const value = useMemo(
@@ -154,6 +166,7 @@ export function AuthProvider({ children }) {
       login,
       logout,
       register,
+      updatePassword,
     }),
     [authError, currentUser, idToken, loading, refreshToken],
   );

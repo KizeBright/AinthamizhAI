@@ -23,6 +23,38 @@ const formatDate = (value) => {
   }).format(new Date(value));
 };
 
+const getDisplayName = (user) =>
+  user?.user_metadata?.displayName ||
+  user?.user_metadata?.full_name ||
+  user?.email?.split("@")[0] ||
+  "";
+
+const getActivityDetail = (item) => {
+  const metadata = item.metadata || {};
+
+  if (item.feature === "pronunciation" && Number.isFinite(metadata.accuracy)) {
+    return `${metadata.accuracy}% accuracy`;
+  }
+
+  if (item.feature === "translation") {
+    return `${metadata.inputLength || 0} chars translated`;
+  }
+
+  if (item.feature === "ocr") {
+    return `${metadata.extractedLength || 0} chars extracted`;
+  }
+
+  if (item.feature === "entity") {
+    return `${metadata.entityCount || 0} entities found`;
+  }
+
+  if (item.feature === "sentence") {
+    return `${metadata.tense || "grammar"} / ${metadata.gender || "learner"}`;
+  }
+
+  return item.countField || "Feature used";
+};
+
 function Dashboard() {
   const { currentUser, loading: authLoading } = useAuth();
   const [stats, setStats] = useState(emptyStats);
@@ -41,8 +73,8 @@ function Dashboard() {
 
       try {
         const [statsResponse, activityResponse] = await Promise.all([
-          API.get(`/analytics/stats/${currentUser.uid}`),
-          API.get(`/analytics/activity/${currentUser.uid}`, {
+          API.get("/analytics/stats"),
+          API.get("/analytics/activity", {
             params: { limit: 12 },
           }),
         ]);
@@ -147,7 +179,7 @@ function Dashboard() {
             Dashboard
           </p>
           <h1 className="mt-2 text-3xl font-black text-slate-950 sm:text-4xl">
-            Welcome back{currentUser.displayName ? `, ${currentUser.displayName}` : ""}
+            Welcome back{getDisplayName(currentUser) ? `, ${getDisplayName(currentUser)}` : ""}
           </h1>
           <p className="mt-2 text-slate-600">
             A quick view of your Tamil learning activity.
@@ -188,7 +220,7 @@ function Dashboard() {
               Recent Activities
             </h2>
             <p className="text-sm text-slate-500">
-              Latest successful AI feature usage
+              A timeline of successful AI actions saved for this signed-in user.
             </p>
           </div>
         </div>
@@ -197,7 +229,7 @@ function Dashboard() {
           <table className="min-w-full divide-y divide-slate-200 text-left">
             <thead className="bg-slate-50">
               <tr>
-                {["Feature", "Count Field", "Amount", "When"].map((heading) => (
+                {["Feature", "Details", "Amount", "When"].map((heading) => (
                   <th
                     key={heading}
                     className="px-5 py-3 text-xs font-black uppercase tracking-wider text-slate-500"
@@ -223,7 +255,7 @@ function Dashboard() {
                       </span>
                     </td>
                     <td className="px-5 py-4 text-sm text-slate-600">
-                      {item.countField}
+                      {getActivityDetail(item)}
                     </td>
                     <td className="px-5 py-4 text-sm font-bold text-slate-950">
                       +{item.amount}

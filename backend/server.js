@@ -5,17 +5,11 @@ const express = require("express");
 
 const analyticsRoutes = require("./routes/analytics");
 const authRoutes = require("./routes/auth");
-const entityRoutes = require("./routes/entityRoutes");
 const generatorRoutes = require("./routes/generator");
-const historyRoutes = require("./routes/historyRoutes");
 const nerRoutes = require("./routes/ner");
 const ocrAiRoutes = require("./routes/ocr");
-const ocrRoutes = require("./routes/ocrRoutes");
 const pronunciationAiRoutes = require("./routes/pronunciation");
-const pronunciationRoutes = require("./routes/pronunciationRoutes");
-const sentenceRoutes = require("./routes/sentenceRoutes");
 const translatorRoutes = require("./routes/translator");
-const translateRoutes = require("./routes/translateRoutes");
 
 const app = express();
 
@@ -70,12 +64,6 @@ mountRouter("/api/ner", nerRoutes);
 mountRouter("/api/generator", generatorRoutes);
 mountRouter("/api/pronunciation", pronunciationAiRoutes);
 mountRouter("/api/ocr", ocrAiRoutes);
-mountRouter("/api/translate", translateRoutes);
-mountRouter("/api/legacy/ocr", ocrRoutes);
-mountRouter("/api/legacy/pronunciation", pronunciationRoutes);
-mountRouter("/api/sentences", sentenceRoutes);
-mountRouter("/api/entities", entityRoutes);
-mountRouter("/api/history", historyRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
@@ -88,7 +76,7 @@ app.use((err, req, res, next) => {
   const statusCode = Number.isInteger(err.statusCode) ? err.statusCode : 500;
   const isProduction = process.env.NODE_ENV === "production";
 
-  if (!isProduction) {
+  if (!isProduction && statusCode >= 500) {
     console.error(err);
   }
 

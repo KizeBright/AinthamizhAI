@@ -220,11 +220,6 @@ router.post("/", authMiddleware, conditionalBody, async (req, res, next) => {
       audio = getBase64Payload(req);
     }
 
-  console.log("====================================");
-  console.log("FILE INFO:", req.file);
-  console.log("MIME TYPE:", audio.mimeType);
-  console.log("====================================");
-
   if (
   !audio.mimeType.startsWith("audio/") &&
   audio.mimeType !== "video/webm"

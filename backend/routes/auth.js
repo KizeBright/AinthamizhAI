@@ -75,8 +75,6 @@ router.post("/register", async (req, res, next) => {
     });
 
     if (error) {
-      console.error("Supabase registration error:", error.message);
-
       // Handle auth provider disabled
       if (error.message && error.message.includes("disabled")) {
         return res.status(503).json({
@@ -170,8 +168,6 @@ router.post("/login", async (req, res, next) => {
     });
 
     if (error) {
-      console.error("Supabase auth error:", error.message);
-
       // Handle specific Supabase auth configuration issues
       if (error.message && error.message.includes("disabled")) {
         return res.status(503).json({
@@ -234,7 +230,6 @@ router.post("/login", async (req, res, next) => {
       access_token: data.session?.access_token,
     });
   } catch (error) {
-    console.error("Login endpoint error:", error);
     return next(error);
   }
 });
@@ -300,8 +295,6 @@ router.get("/me", authMiddleware, async (req, res) => {
       user: data,
     });
   } catch (err) {
-    console.error(err);
-
     return res.status(500).json({
       error: err.message,
     });

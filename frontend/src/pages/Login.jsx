@@ -1,16 +1,19 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../services/supabase";
 
 function Login() {
   const navigate = useNavigate();
-  const { forgotPassword, login, register } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { forgotPassword, login, register, updatePassword } = useAuth();
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState({
     displayName: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -19,6 +22,20 @@ function Login() {
   const updateField = (key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
+
+  useEffect(() => {
+    const queryMode = searchParams.get("mode");
+    const hashParams = new URLSearchParams(
+      window.location.hash.replace(/^#/, ""),
+    );
+    const authType = hashParams.get("type") || searchParams.get("type");
+
+    if (queryMode === "recovery" || authType === "recovery") {
+      setMode("recovery");
+      setStatus("Enter a new password to finish resetting your account.");
+      window.history.replaceState(null, "", "/login?mode=recovery");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -29,7 +46,29 @@ function Login() {
     try {
       if (mode === "reset") {
         await forgotPassword(form.email);
-        setStatus("Password reset email sent.");
+        setStatus("Password reset email sent. Open the link to set a new password.");
+        return;
+      }
+
+      if (mode === "recovery") {
+        if (form.password.length < 6) {
+          throw new Error("Password must be at least 6 characters.");
+        }
+
+        if (form.password !== form.confirmPassword) {
+          throw new Error("Passwords do not match.");
+        }
+
+        await updatePassword(form.password);
+        await supabase.auth.signOut();
+        setStatus("Password updated. Please login with your new password.");
+        setMode("login");
+        setForm((current) => ({
+          ...current,
+          password: "",
+          confirmPassword: "",
+        }));
+        window.history.replaceState(null, "", "/login");
         return;
       }
 
@@ -84,6 +123,12 @@ function Login() {
             ))}
           </div>
 
+          {mode === "recovery" && (
+            <div className="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              Password reset verified. Set your new password below.
+            </div>
+          )}
+
           {mode === "register" && (
             <label className="mb-4 block">
               <span className="mb-2 block text-sm font-semibold text-slate-700">
@@ -100,24 +145,26 @@ function Login() {
             </label>
           )}
 
-          <label className="mb-4 block">
-            <span className="mb-2 block text-sm font-semibold text-slate-700">
-              Email
-            </span>
-            <input
-              required
-              type="email"
-              className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-              value={form.email}
-              onChange={(event) => updateField("email", event.target.value)}
-              placeholder="you@example.com"
-            />
-          </label>
+          {mode !== "recovery" && (
+            <label className="mb-4 block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">
+                Email
+              </span>
+              <input
+                required
+                type="email"
+                className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                value={form.email}
+                onChange={(event) => updateField("email", event.target.value)}
+                placeholder="you@example.com"
+              />
+            </label>
+          )}
 
           {mode !== "reset" && (
             <label className="mb-5 block">
               <span className="mb-2 block text-sm font-semibold text-slate-700">
-                Password
+                {mode === "recovery" ? "New Password" : "Password"}
               </span>
               <input
                 required
@@ -129,6 +176,25 @@ function Login() {
                   updateField("password", event.target.value)
                 }
                 placeholder="At least 6 characters"
+              />
+            </label>
+          )}
+
+          {mode === "recovery" && (
+            <label className="mb-5 block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">
+                Confirm New Password
+              </span>
+              <input
+                required
+                type="password"
+                minLength={6}
+                className="w-full rounded-md border border-slate-300 px-4 py-3 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                value={form.confirmPassword}
+                onChange={(event) =>
+                  updateField("confirmPassword", event.target.value)
+                }
+                placeholder="Re-enter new password"
               />
             </label>
           )}
@@ -150,7 +216,13 @@ function Login() {
             disabled={loading}
             className="w-full rounded-md bg-slate-950 px-5 py-3 font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Working..." : mode === "reset" ? "Send reset" : "Continue"}
+            {loading
+              ? "Working..."
+              : mode === "reset"
+                ? "Send reset"
+                : mode === "recovery"
+                  ? "Update password"
+                  : "Continue"}
           </button>
         </form>
       </div>
