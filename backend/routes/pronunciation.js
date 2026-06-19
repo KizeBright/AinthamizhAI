@@ -27,16 +27,17 @@ const DEFAULT_AUDIO_MIME_TYPE = "audio/webm";
 
 const PRONUNCIATION_SYSTEM_PROMPT = `
 You are Ainthamizh AI's Tamil pronunciation validator.
-Task: Transcribe the user's Tamil speech from audio and compare it conceptually against the provided target Tamil text.
+Task: Transcribe the user's Tamil speech from audio and compare it against the provided target Tamil text.
 Rules:
 - Return only valid JSON. No markdown and no text outside JSON.
-- The transcript must be Tamil Unicode when Tamil is spoken.
+- The transcript must be Tamil Unicode when Tamil is spoken. If the speaker used romanized Tamil (Tanglish), convert it to Tamil Unicode in the transcript.
+- Do your best to transcribe even if the audio quality is low or the accent is non-native.
 - Focus on Tamil pronunciation, missing syllables, substitutions, and difficult sounds.
 - Include learner-friendly feedback in English plus Tamil examples where useful.
-- Do not fabricate words that are not audible. Use an empty transcript if the audio is unintelligible.
+- If the audio is completely silent or unintelligible, set transcript to empty string and explain in overallFeedback.
 Required JSON shape:
 {
-  "transcript": "recognized Tamil text",
+  "transcript": "recognized Tamil text in Unicode",
   "confidence": 0.0,
   "phonemeIssues": [
     {
@@ -111,7 +112,7 @@ const getBase64Payload = (req) => {
 
 const getTargetText = (req) => {
   const targetText =
-    req.body.targetText || req.query.targetText || req.headers["x-target-text"];
+    req.body?.targetText || req.query.targetText || req.headers["x-target-text"];
 
   if (typeof targetText !== "string" || targetText.trim().length === 0) {
     const error = new Error("targetText is required.");
@@ -199,7 +200,9 @@ const buildFallbackFeedback = (targetText, transcript, accuracy) => {
 router.post("/", authMiddleware, conditionalBody, async (req, res, next) => {
   try {
     const targetText = getTargetText(req);
-
+    console.log("[pronunciation] targetText:", targetText);
+    console.log("[pronunciation] file:", req.file ? `${req.file.size} bytes, ${req.file.mimetype}` : "none");
+    console.log("[pronunciation] body keys:", Object.keys(req.body || {}));
     let audio;
 
     if (req.file && req.file.buffer) {
@@ -222,7 +225,7 @@ router.post("/", authMiddleware, conditionalBody, async (req, res, next) => {
 
   if (
   !audio.mimeType.startsWith("audio/") &&
-  audio.mimeType !== "video/webm"
+  !audio.mimeType.startsWith("video/webm")
 ) {
   const error = new Error(
     "Audio mimeType must be audio/* or video/webm."
@@ -232,7 +235,8 @@ router.post("/", authMiddleware, conditionalBody, async (req, res, next) => {
   throw error;
 }
 
-if (audio.mimeType === "video/webm") {
+// Normalize any video/webm variant to audio/webm for Gemini
+if (audio.mimeType.startsWith("video/webm") || audio.mimeType.startsWith("audio/webm")) {
   audio.mimeType = "audio/webm";
 }
 

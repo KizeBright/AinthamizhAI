@@ -122,16 +122,12 @@ function TanglishTranslator() {
   }
 
   const inputSection = (
-    <div className="space-y-5">
+    <>
       <Card>
         <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-end">
           <label>
             <span className="field-label">Source language</span>
-            <select
-              value={sourceLanguage}
-              onChange={(event) => setSourceLanguage(event.target.value)}
-              className="field-control"
-            >
+            <select value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value)} className="field-control">
               <option>Tanglish</option>
               <option>Tamil</option>
             </select>
@@ -142,11 +138,7 @@ function TanglishTranslator() {
           </Button>
           <label>
             <span className="field-label">Target language</span>
-            <select
-              value={targetLanguage}
-              onChange={(event) => setTargetLanguage(event.target.value)}
-              className="field-control"
-            >
+            <select value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)} className="field-control">
               <option>Tamil</option>
               <option>Tanglish</option>
             </select>
@@ -160,7 +152,7 @@ function TanglishTranslator() {
           <span className="text-xs font-semibold text-gray-400">{text.length}/2000</span>
         </div>
         <textarea
-          className="field-control min-h-80 resize-none text-gray-900 dark:text-gray-100 text-lg leading-8"
+          className="field-control min-h-64 resize-none text-gray-900 dark:text-gray-100 text-lg leading-8"
           value={text}
           maxLength={2000}
           onChange={(event) => setText(event.target.value)}
@@ -180,50 +172,38 @@ function TanglishTranslator() {
 
       <ExamplePanel
         examples={examples}
-        onSelect={(example) => {
-          setText(example.text);
-          notify.info("Example loaded.");
-        }}
+        onSelect={(example) => { setText(example.text); notify.info("Example loaded."); }}
       />
-    </div>
+    </>
   );
 
   const resultSection = (
-    <div className="space-y-5">
+    <>
       <Card>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="card-title">Translation Result</h2>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={copyOutput}
-            disabled={!result?.tamilText}
-            className="px-3 py-2"
-          >
+          <Button type="button" variant="secondary" onClick={copyOutput} disabled={!result?.tamilText} className="px-3 py-2">
             <Icon name="copy" className="h-4 w-4" />
             Copy
           </Button>
         </div>
-
         {loading ? (
-          <Skeleton className="min-h-80 w-full" />
+          <Skeleton className="min-h-64 w-full" />
         ) : (
-          <div className="min-h-80 rounded-2xl border border-gray-100 bg-indigo-50/60 dark:border-indigo-800 dark:bg-indigo-900/20 p-5 text-3xl font-bold leading-[1.8] text-gray-950 dark:text-gray-50">
-            {result?.tamilText || (
-              <span className="text-base font-medium text-gray-400">
-                Your Tamil text will appear here.
-              </span>
-            )}
-          </div>
-        )}
+                <div className="space-y-4">
+                  <div className="min-h-64 rounded-2xl border border-gray-100 bg-indigo-50/60 dark:border-indigo-800 dark:bg-indigo-900/20 p-5 text-3xl font-bold leading-[1.8] text-gray-950 dark:text-gray-50">
+                    {result?.tamilText || (
+                      <span className="text-base font-medium text-gray-400">Your Tamil text will appear here.</span>
+                    )}
+                  </div>
 
+
+                </div>
+        )}
         {result?.tokens?.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
             {result.tokens.slice(0, 12).map((token, index) => (
-              <span
-                key={`${token.source}-${index}`}
-                className="badge border-indigo-100 bg-white text-indigo-700 dark:border-indigo-800 dark:bg-gray-800 dark:text-indigo-300"
-              >
+              <span key={`${token.source}-${index}`} className="badge border-indigo-100 bg-white text-indigo-700 dark:border-indigo-800 dark:bg-gray-800 dark:text-indigo-300">
                 {token.source} {"->"} {token.tamil}
               </span>
             ))}
@@ -233,20 +213,11 @@ function TanglishTranslator() {
 
       <HistoryPanel
         items={history}
-        onClear={() => {
-          setHistory(clearHistory(HISTORY_KEY));
-          notify.success("Translator history cleared.");
-        }}
-        onReuse={(item) => {
-          setText(item.input || "");
-          setResult(item.output ? { tamilText: item.output } : null);
-          notify.info("History entry loaded.");
-        }}
+        onClear={() => { setHistory(clearHistory(HISTORY_KEY)); notify.success("Translator history cleared."); }}
+        onReuse={(item) => { setText(item.input || ""); setResult(item.output ? { tamilText: item.output } : null); notify.info("History entry loaded."); }}
         renderItem={(item) => (
           <>
-            <span className="block truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-              {item.input}
-            </span>
+            <span className="block truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{item.input}</span>
             <span className="mt-1 block truncate text-sm text-gray-500 dark:text-gray-400">{item.output}</span>
             <span className="mt-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
               <Icon name="clock" className="h-3 w-3" />
@@ -255,7 +226,7 @@ function TanglishTranslator() {
           </>
         )}
       />
-    </div>
+    </>
   );
 
   return (

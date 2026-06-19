@@ -101,7 +101,7 @@ function SentenceGenerator() {
   }
 
   const inputSection = (
-    <div className="space-y-5">
+    <>
       <Card>
         <form onSubmit={generateSentence} className="space-y-4">
           {[
@@ -110,91 +110,59 @@ function SentenceGenerator() {
           ].map(([key, label]) => (
             <label key={key} className="block">
               <span className="field-label">{label}</span>
-              <input
-                required
-                value={form[key]}
-                onChange={(event) => updateField(key, event.target.value)}
-                className="field-control"
-              />
+              <input required value={form[key]} onChange={(event) => updateField(key, event.target.value)} className="field-control" />
             </label>
           ))}
-
           <label className="block">
             <span className="field-label">Tense</span>
-            <select
-              value={form.tense}
-              onChange={(event) => updateField("tense", event.target.value)}
-              className="field-control"
-            >
+            <select value={form.tense} onChange={(event) => updateField("tense", event.target.value)} className="field-control">
               <option value="past">Past</option>
               <option value="present">Present</option>
               <option value="future">Future</option>
             </select>
           </label>
-
           <label className="block">
             <span className="field-label">Gender</span>
-            <select
-              value={form.gender}
-              onChange={(event) => updateField("gender", event.target.value)}
-              className="field-control"
-            >
+            <select value={form.gender} onChange={(event) => updateField("gender", event.target.value)} className="field-control">
               <option value="male">Male</option>
               <option value="female">Female</option>
               <option value="neutral">Neutral</option>
               <option value="plural">Plural</option>
             </select>
           </label>
-
           <label className="block">
             <span className="field-label">Mode</span>
-            <select
-              value={form.mode}
-              onChange={(event) => updateField("mode", event.target.value)}
-              className="field-control"
-            >
+            <select value={form.mode} onChange={(event) => updateField("mode", event.target.value)} className="field-control">
               <option value="sentence">Sentence</option>
               <option value="dialogue">Dialogue</option>
             </select>
           </label>
-
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "Generating..." : "Generate"}
             <Icon name="spark" className="h-4 w-4" />
           </Button>
         </form>
       </Card>
-
       <ExamplePanel
         examples={examples}
-        onSelect={(example) => {
-          setForm((current) => ({ ...current, ...example.form }));
-          notify.info("Example loaded.");
-        }}
+        onSelect={(example) => { setForm((current) => ({ ...current, ...example.form })); notify.info("Example loaded."); }}
       />
-    </div>
+    </>
   );
 
   const resultSection = (
-    <div className="space-y-5">
+    <>
       <Card>
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="section-title">Generated Output</h2>
             <p className="mt-1 helper-text">Tamil sentence, transliteration, and grammar notes.</p>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={copyResult}
-            disabled={!result}
-            className="px-3 py-2"
-          >
+          <Button type="button" variant="secondary" onClick={copyResult} disabled={!result} className="px-3 py-2">
             <Icon name="copy" className="h-4 w-4" />
             Copy
           </Button>
         </div>
-
         {loading ? (
           <div className="space-y-4">
             <Skeleton className="h-40 w-full" />
@@ -205,18 +173,21 @@ function SentenceGenerator() {
           </div>
         ) : result ? (
           <div>
-            <blockquote className="rounded-2xl border border-indigo-100 bg-indigo-50/60 dark:border-indigo-800 dark:bg-indigo-900/30 p-6">
-              <p className="text-3xl font-bold leading-[1.8] text-gray-950 dark:text-gray-50">
-                {result.sentence}
-              </p>
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 dark:border-indigo-800 dark:bg-indigo-900/30 p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-200">Tamil output</p>
+                </div>
+              </div>
+              <p className="mt-3 text-3xl font-bold leading-[1.8] text-gray-950 dark:text-gray-50">{result.sentence}</p>
               {result.dialogue?.length > 0 && (
                 <div className="mt-5 space-y-3 text-xl font-semibold leading-9 text-gray-800 dark:text-gray-200">
-                  {result.dialogue.map((line, index) => (
-                    <p key={`${line}-${index}`}>{line}</p>
-                  ))}
+                  {result.dialogue.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}
                 </div>
               )}
-            </blockquote>
+
+
+            </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40 p-4 text-emerald-800 dark:text-emerald-300">
@@ -224,37 +195,22 @@ function SentenceGenerator() {
                 <p className="mt-2 font-semibold">{result.transliteration}</p>
               </div>
               <div className="rounded-2xl border border-amber-100 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40 p-4 text-amber-800 dark:text-amber-300">
-                <p className="text-xs font-bold uppercase tracking-wider">Grammar Note</p>
+                <p className="text-xs font-bold uppercase tracking-wider">Grammar Note (Tamil)</p>
                 <p className="mt-2 leading-7">{result.grammarNoteTamil}</p>
+
               </div>
             </div>
           </div>
         ) : (
-          <EmptyState
-            icon="sentence"
-            title="Generated Tamil output will appear here."
-            description="Use the controls to build a sentence or a short dialogue."
-          />
+          <EmptyState icon="sentence" title="Generated Tamil output will appear here." description="Use the controls to build a sentence or a short dialogue." />
         )}
       </Card>
-
       <HistoryPanel
         items={history}
-        onClear={() => {
-          setHistory(clearHistory(HISTORY_KEY));
-          notify.success("Sentence history cleared.");
-        }}
-        onReuse={(item) => {
-          if (item.form) {
-            setForm(item.form);
-          }
-          if (item.result) {
-            setResult(item.result);
-          }
-          notify.info("History entry loaded.");
-        }}
+        onClear={() => { setHistory(clearHistory(HISTORY_KEY)); notify.success("Sentence history cleared."); }}
+        onReuse={(item) => { if (item.form) setForm(item.form); if (item.result) setResult(item.result); notify.info("History entry loaded."); }}
       />
-    </div>
+    </>
   );
 
   return (
@@ -266,7 +222,7 @@ function SentenceGenerator() {
       onRetry={generateSentence}
       input={inputSection}
       result={resultSection}
-      gridClassName="lg:grid-cols-[420px_1fr]"
+      gridClassName="lg:grid-cols-2"
     />
   );
 }

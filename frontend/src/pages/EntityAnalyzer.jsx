@@ -79,14 +79,14 @@ function EntityAnalyzer() {
   }
 
   const inputSection = (
-    <div className="space-y-5">
+    <>
       <Card>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="section-title">Input Section</h2>
           <span className="text-xs font-semibold text-gray-400">{text.length}/6000</span>
         </div>
         <textarea
-          className="field-control min-h-96 resize-none text-gray-900 dark:text-gray-100 text-lg leading-8"
+          className="field-control min-h-64 resize-none text-gray-900 dark:text-gray-100 text-lg leading-8"
           value={text}
           maxLength={6000}
           onChange={(event) => setText(event.target.value)}
@@ -97,15 +97,11 @@ function EntityAnalyzer() {
           <Icon name="entity" className="h-4 w-4" />
         </Button>
       </Card>
-
       <ExamplePanel
         examples={examples}
-        onSelect={(example) => {
-          setText(example.text);
-          notify.info("Example loaded.");
-        }}
+        onSelect={(example) => { setText(example.text); notify.info("Example loaded."); }}
       />
-    </div>
+    </>
   );
 
   const resultSection = (
@@ -156,10 +152,23 @@ function EntityAnalyzer() {
                     {entity.type}
                   </span>
                 </div>
-                <p className="mt-3 leading-7">{entity.explanationTamil}</p>
-                <p className="mt-3 text-xs font-semibold opacity-75">
-                  Confidence: {Math.round((entity.confidence || 0) * 100)}%
-                </p>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tamil</p>
+                    <p className="mt-2 leading-7">{entity.explanationTamil}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">English</p>
+                    <p className="mt-2 leading-7">
+                      {entity.explanationEnglish || "—"}
+                    </p>
+                  </div>
+
+                  <p className="mt-1 text-xs font-semibold opacity-75">
+                    Confidence: {Math.round((entity.confidence || 0) * 100)}%
+                  </p>
+                </div>
               </article>
             ))}
           </div>
@@ -183,7 +192,7 @@ function EntityAnalyzer() {
       onRetry={text.trim() ? analyzeEntities : undefined}
       input={inputSection}
       result={resultSection}
-      gridClassName="lg:grid-cols-[0.9fr_1.1fr]"
+      gridClassName="lg:grid-cols-2"
     />
   );
 }

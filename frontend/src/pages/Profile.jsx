@@ -44,10 +44,10 @@ function Profile() {
         const user = res.data?.user;
         setProfile(user || null);
         setForm({
-          displayName: user?.display_name || "",
-          photoURL: user?.photo_url || "",
-          preferredLevel: user?.preferred_level || "",
-          nativeLanguage: user?.native_language || "",
+          displayName: user?.display_name || user?.displayName || "",
+          photoURL: user?.photo_url || user?.photoURL || "",
+          preferredLevel: user?.preferred_level || user?.preferredLevel || "",
+          nativeLanguage: user?.native_language || user?.nativeLanguage || "",
         });
       } catch (e) {
         // profile is optional (we still allow password change)
@@ -313,7 +313,8 @@ function Profile() {
         <div className="space-y-6">
           <Card>
             <div className="flex items-center justify-between gap-4">
-              <h2 className="section-title">Daily streak</h2>
+            <h2 className="section-title">Daily streak</h2>
+
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
                 <Icon name="progress" />
               </span>

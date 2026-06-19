@@ -52,7 +52,16 @@ function PronunciationValidator() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      const mimeType = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/ogg",
+        "audio/mp4",
+      ].find((type) => MediaRecorder.isTypeSupported(type)) || "";
+
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       chunksRef.current = [];
 
       recorder.ondataavailable = (event) => {
@@ -62,10 +71,11 @@ function PronunciationValidator() {
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const finalMime = recorder.mimeType || mimeType || "audio/webm";
+        const blob = new Blob(chunksRef.current, { type: finalMime });
         setAudioBlob(blob);
         stream.getTracks().forEach((track) => track.stop());
-        notify.success("Recording saved locally.");
+        notify.success("Recording saved.");
       };
 
       mediaRecorderRef.current = recorder;
@@ -105,12 +115,12 @@ function PronunciationValidator() {
     setError("");
 
     try {
-      const response = await API.post("/pronunciation", audioBlob, {
-        headers: {
-          "Content-Type": audioBlob.type || "audio/webm",
-          "X-Target-Text": targetText,
-        },
-        params: { targetText },
+      const formData = new FormData();
+      formData.append("file", audioBlob, "recording.webm");
+      formData.append("targetText", targetText);
+
+      const response = await API.post("/pronunciation", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       setResult(response.data.data);
@@ -137,37 +147,26 @@ function PronunciationValidator() {
   }
 
   const inputSection = (
-    <div className="space-y-5">
+    <>
       <Card>
-        <h2 className="section-title">Recording Card</h2>
+        <h2 className="section-title">Recording</h2>
         <label className="mt-5 block">
           <span className="field-label">Target Tamil text</span>
           <textarea
-            className="field-control min-h-32 resize-none bg-gray-50 dark:bg-gray-800/60 text-xl font-semibold leading-9 focus:bg-white dark:focus:bg-gray-800"
+            className="field-control min-h-32 resize-none text-xl font-semibold leading-9"
             value={targetText}
             onChange={(event) => setTargetText(event.target.value)}
           />
         </label>
-
         <div className="mt-5 flex flex-wrap gap-3">
-          <Button
-            type="button"
-            variant={recording ? "secondary" : "primary"}
-            onClick={recording ? stopRecording : startRecording}
-          >
+          <Button type="button" variant={recording ? "secondary" : "primary"} onClick={recording ? stopRecording : startRecording}>
             <Icon name={recording ? "stop" : "mic"} className="h-4 w-4" />
             {recording ? "Stop recording" : "Start recording"}
           </Button>
-          <Button
-            type="button"
-            disabled={!audioBlob || loading}
-            onClick={submitAudio}
-            variant="secondary"
-          >
+          <Button type="button" disabled={!audioBlob || loading} onClick={submitAudio} variant="secondary">
             {loading ? "Validating..." : "Submit audio"}
           </Button>
         </div>
-
         <div className="mt-6">
           <div className="mb-2 flex justify-between text-sm font-semibold text-gray-700 dark:text-gray-300">
             <span>Recording readiness</span>
@@ -175,100 +174,94 @@ function PronunciationValidator() {
           </div>
           <div className="h-3 rounded-full bg-gray-100 dark:bg-gray-800">
             <div
-              className={`h-3 rounded-full transition-all ${
-                recording ? "bg-red-500" : audioBlob ? "bg-emerald-500" : "bg-indigo-600"
-              }`}
+              className={`h-3 rounded-full transition-all ${recording ? "bg-red-500" : audioBlob ? "bg-emerald-500" : "bg-indigo-600"}`}
               style={{ width: audioBlob ? "100%" : recording ? "64%" : "18%" }}
             />
           </div>
         </div>
-
         {recording && (
           <div className="mt-5 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 dark:border-red-900 dark:bg-red-950/40 p-4 text-red-600 dark:text-red-400">
             <span className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
             Recording in progress
           </div>
         )}
-
         {audioBlob && !recording && (
           <audio className="mt-5 w-full" controls src={URL.createObjectURL(audioBlob)} />
         )}
       </Card>
-
       <ExamplePanel
         examples={examples}
-        onSelect={(example) => {
-          setTargetText(example.text);
-          notify.info("Example loaded.");
-        }}
+        onSelect={(example) => { setTargetText(example.text); notify.info("Example loaded."); }}
       />
-    </div>
+    </>
   );
 
   const resultSection = (
     <Card>
+      <h2 className="section-title mb-5">Results</h2>
       {loading ? (
-        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-          <Skeleton className="h-56 w-56 justify-self-center rounded-full" />
-          <div className="space-y-4">
-            <Skeleton className="h-28 w-full" />
-            <Skeleton className="h-28 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </div>
+        <div className="space-y-4">
+          <Skeleton className="mx-auto h-56 w-56 rounded-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
         </div>
       ) : result ? (
-        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-          <div>
-            <h2 className="section-title text-center">Score</h2>
-            <div className="mt-5 grid place-items-center">
-              <div
-                className="grid h-56 w-56 place-items-center rounded-full p-4 transition-all duration-700"
-                style={gaugeStyle}
-              >
-                <div className="grid h-full w-full place-items-center rounded-full bg-white dark:bg-gray-900 shadow-inner">
-                  <div className="text-center">
-                    <p className="text-5xl font-bold text-gray-950 dark:text-gray-50">{accuracy}%</p>
-                    <p className="mt-1 text-sm font-semibold text-gray-500 dark:text-gray-400">Accuracy</p>
-                  </div>
+        <div className="space-y-4">
+          <div className="grid place-items-center">
+            <div className="grid h-48 w-48 place-items-center rounded-full p-4 transition-all duration-700" style={gaugeStyle}>
+              <div className="grid h-full w-full place-items-center rounded-full bg-white dark:bg-gray-900 shadow-inner">
+                <div className="text-center">
+                  <p className="text-5xl font-bold text-gray-950 dark:text-gray-50">{accuracy}%</p>
+                  <p className="mt-1 text-sm font-semibold text-gray-500 dark:text-gray-400">Accuracy</p>
                 </div>
               </div>
             </div>
           </div>
-
-          <div>
-            <div className="rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Transcript
-              </p>
-              <p className="mt-2 text-2xl font-bold leading-10 text-gray-950 dark:text-gray-50">
-                {result.transcript || "No clear speech detected"}
-              </p>
+          <div className="rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Transcript</p>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40 p-4 text-emerald-800 dark:text-emerald-300">
-              <p className="text-xs font-bold uppercase tracking-wider">Feedback</p>
-              <p className="mt-2 leading-7">{result.feedback}</p>
-            </div>
+            <div className="mt-3 space-y-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tamil</p>
+                <p className="mt-2 text-2xl font-bold leading-10 text-gray-950 dark:text-gray-50">
+                  {result.transcript || "No clear speech detected"}
+                </p>
+              </div>
 
-            <div className="mt-4 space-y-3">
-              {(result.phonemeIssues || []).map((issue, index) => (
-                <div
-                  key={`${issue.sound}-${index}`}
-                  className="rounded-2xl border border-amber-100 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40 p-4 text-amber-900 dark:text-amber-300"
-                >
-                  <p className="font-bold">{issue.sound}</p>
-                  <p className="mt-1 text-sm">{issue.feedback}</p>
-                </div>
-              ))}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">English</p>
+                <p className="mt-2 leading-7">
+                  {result.transcriptEnglish || "—"}
+                </p>
+              </div>
             </div>
           </div>
+
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40 p-4 text-emerald-800 dark:text-emerald-300">
+            <p className="text-xs font-bold uppercase tracking-wider">Feedback</p>
+            <div className="mt-2 space-y-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-emerald-900/70 dark:text-emerald-200/70">English</p>
+                <p className="mt-1 leading-7">{result.feedback}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-emerald-900/70 dark:text-emerald-200/70">Tamil</p>
+                <p className="mt-1 leading-7">{result.feedbackTamil || "—"}</p>
+              </div>
+            </div>
+          </div>
+          {(result.phonemeIssues || []).map((issue, index) => (
+            <div key={`${issue.sound}-${index}`} className="rounded-2xl border border-amber-100 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40 p-4 text-amber-900 dark:text-amber-300">
+              <p className="font-bold">{issue.sound}</p>
+              <p className="mt-1 text-sm">{issue.feedback}</p>
+            </div>
+          ))}
         </div>
       ) : (
-        <EmptyState
-          icon="mic"
-          title="Pronunciation results will appear here."
-          description="Record a sample and submit it to see score, transcript, and correction tips."
-        />
+        <EmptyState icon="mic" title="Pronunciation results will appear here." description="Record a sample and submit it to see score, transcript, and correction tips." />
       )}
     </Card>
   );
@@ -282,7 +275,7 @@ function PronunciationValidator() {
       onRetry={audioBlob ? submitAudio : undefined}
       input={inputSection}
       result={resultSection}
-      gridClassName="lg:grid-cols-[440px_1fr]"
+      gridClassName="lg:grid-cols-2"
     />
   );
 }

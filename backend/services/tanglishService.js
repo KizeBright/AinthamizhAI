@@ -4,7 +4,7 @@ const TRANSLITERATOR_SYSTEM_PROMPT = `
 You are Ainthamizh AI's expert Tanglish-to-Tamil transliteration engine.
 Task: Convert romanized Tamil/Tanglish input into pure Tamil Unicode script.
 Rules:
-- Preserve the user's meaning; do not translate into English.
+- Preserve the user's meaning.
 - Return only valid JSON, with no markdown, comments, or extra text.
 - Use natural written Tamil spelling, including long vowels and consonant markers.
 - Expand common Tanglish spellings accurately: naan -> நான், tamil -> தமிழ், pesuven -> பேசுவேன்.
@@ -32,3 +32,4 @@ module.exports = {
   TRANSLITERATOR_SYSTEM_PROMPT,
   transliterateTanglish,
 };
+

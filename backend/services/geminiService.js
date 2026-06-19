@@ -76,32 +76,60 @@ const generateText = async ({
   responseMimeType = "application/json",
   model = DEFAULT_MODEL,
 }) => {
-  const client = new GoogleGenAI({ apiKey: getKey() });
+  const maxAttempts = Math.max(keys.length, 3);
+  let lastError;
 
-  const response = await client.models.generateContent({
-    model,
-    contents,
-    config: createGenerationConfig({
-      systemInstruction,
-      temperature,
-      responseMimeType,
-    }),
-  });
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const client = new GoogleGenAI({ apiKey: getKey() });
+      const response = await client.models.generateContent({
+        model,
+        contents,
+        config: createGenerationConfig({ systemInstruction, temperature, responseMimeType }),
+      });
 
-  const text = extractResponseText(response);
-
-  if (!text) {
-    const error = new Error("Gemini returned an empty response.");
-    error.statusCode = 502;
-    error.name = "BadGateway";
-    throw error;
+      const text = extractResponseText(response);
+      if (!text) {
+        const error = new Error("Gemini returned an empty response.");
+        error.statusCode = 502;
+        error.name = "BadGateway";
+        throw error;
+      }
+      return text;
+    } catch (err) {
+      lastError = err;
+      const status = err?.status || err?.statusCode;
+      // Only retry on 503 (overloaded) or 429 (rate limit)
+      if (status === 503 || status === 429) {
+        const delay = 1000 * (attempt + 1);
+        console.warn(`[gemini] attempt ${attempt + 1} failed (${status}), retrying in ${delay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+      throw err;
+    }
   }
 
-  return text;
+  throw lastError;
 };
 
 const generateJson = async (options) => {
-  const text = await generateText(options);
+  const text = await generateText(options).catch((err) => {
+    const status = err?.status || err?.statusCode;
+    if (status === 503) {
+      const friendly = new Error("The AI service is temporarily overloaded. Please wait a few seconds and try again.");
+      friendly.statusCode = 503;
+      friendly.name = "ServiceUnavailable";
+      throw friendly;
+    }
+    if (status === 429) {
+      const friendly = new Error("Too many requests. Please wait a moment and try again.");
+      friendly.statusCode = 429;
+      friendly.name = "TooManyRequests";
+      throw friendly;
+    }
+    throw err;
+  });
   return parseJsonResponse(text);
 };
 

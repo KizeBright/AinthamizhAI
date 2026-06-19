@@ -210,9 +210,9 @@ export function ToolWorkspace({
           onAction={onRetry}
         />
       )}
-      <div className={`grid gap-5 ${gridClassName}`}>
-        <div className={inputClassName}>{input}</div>
-        <div className={resultClassName}>{result}</div>
+      <div className={`grid items-start gap-5 ${gridClassName}`}>
+        <div className={`flex flex-col gap-5 ${inputClassName}`}>{input}</div>
+        <div className={`flex flex-col gap-5 ${resultClassName}`}>{result}</div>
       </div>
     </section>
   );
@@ -267,7 +267,13 @@ export function SegmentedControl({ options, value, onChange, className = "" }) {
 export function ExamplePanel({ title = "Examples", examples, onSelect, className = "" }) {
   return (
     <Card className={className}>
-      <h3 className="card-title">{title}</h3>
+      <div className="flex items-end justify-between gap-3">
+        <h3 className="card-title">{title}</h3>
+        <span className="text-xs font-semibold text-gray-400 dark:text-gray-400">
+          {examples.length} items
+        </span>
+      </div>
+
       <div className="mt-4 grid gap-2">
         {examples.map((example) => (
           <button
@@ -276,7 +282,9 @@ export function ExamplePanel({ title = "Examples", examples, onSelect, className
             onClick={() => onSelect(example)}
             className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-left transition hover:border-indigo-200 hover:bg-indigo-50 dark:border-gray-700 dark:bg-gray-800/60 dark:hover:border-indigo-700 dark:hover:bg-indigo-900/30"
           >
-            <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">{example.title}</span>
+            <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+              {example.title}
+            </span>
             {example.description && (
               <span className="mt-1 block text-sm leading-6 text-gray-500 dark:text-gray-400">
                 {example.description}
@@ -298,7 +306,7 @@ export function HistoryPanel({ title = "Recent History", items, onReuse, onClear
           Clear
         </Button>
       </div>
-      <div className="mt-4 grid gap-2">
+      <div className="mt-4 max-h-96 overflow-y-auto pr-2 grid gap-2">
         {items.length === 0 ? (
           <p className="rounded-2xl bg-gray-50 dark:bg-gray-800/60 px-4 py-5 text-sm text-gray-500 dark:text-gray-400">
             Recent entries will appear here.
@@ -329,6 +337,7 @@ export function HistoryPanel({ title = "Recent History", items, onReuse, onClear
     </Card>
   );
 }
+
 
 export function Field({ label, children, helper }) {
   return (
